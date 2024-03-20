@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
 import Database from './Database.js';
 import CartState from './CartState.js';
-import CartProductEntity from './CartProductEntity.js';
+import ProductEntity from './ProductEntity.js';
 
 const Cart = Database.define("Cart", {
     uuid: {
@@ -16,9 +16,9 @@ const Cart = Database.define("Cart", {
 });
 
 
-CartProductEntity.belongsTo(Cart, { foreignKey: 'cart_uuid', targetKey: 'uuid' });
+ProductEntity.belongsTo(Cart, { foreignKey: 'cart_uuid', targetKey: 'uuid' });
 Cart.belongsTo(CartState, { foreignKey: 'cart_state_name', targetKey: 'name' });
-Cart.hasMany(CartProductEntity);
+Cart.hasMany(ProductEntity);
 CartState.hasMany(Cart);
 
 export default Cart;
