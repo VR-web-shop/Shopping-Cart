@@ -8,8 +8,9 @@
     "/dist_sdk"
   ],
   "scripts": {
-    "start": "nodemon index.js",
+    "start": "set DEBUG=express:* & nodemon index.js",
     "seed": "node seed.js",
+    "bundle_api": "node meteor.config.mjs",
     "bundle_sdk": "rollup --config rollup.config.mjs",
     "deploy_sdk": "bash sdk_deploy.sh"
   },
@@ -24,6 +25,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@vr-web-shop/meteor": "1.0.58",
     "nodemon": "^3.1.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
