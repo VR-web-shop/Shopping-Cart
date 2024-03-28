@@ -120,6 +120,7 @@
              * @returns {object} The found record.
              * @example const record = await find({ id: 1 });
              * @example const record = await find({ id: 1 }, { include: 'profile' });
+             * @example const record = await find({ id: 1 }, { include: 'profile', customParams: { key1: 'value1', key2: 'value2' } });
              */
             this.find = async function (params, methodOptions = {}) {
                 const key = params[foreignKeyName];
@@ -130,6 +131,10 @@
                 let currentEndpoint = `${getUrl()}/${key}`;
                 if (methodOptions.include) {
                     currentEndpoint += `/${methodOptions.include}`;
+                }
+
+                if (methodOptions.customParams) {
+                    currentEndpoint += CrudAPIUtils.getCustomParamsString(methodOptions.customParams, '?');
                 }
 
                 const requestOptions = await buildRequestOptions({ method: 'GET' }, options.find.auth);
@@ -153,9 +158,10 @@
              *   { model: 'posts' }
              * ]
              * @example const records = await findAll({ limit: 10, page: 1, where: { name: 'John Doe', age: 30 } });
+             * @example const records = await findAll({ limit: 10, page: 1, customParams: { key1: 'value1', key2: 'value2' } });
              */
             this.findAll = async function (params) {
-                const { page, limit, q, include, where } = params;
+                const { page, limit, q, include, where, customParams } = params;
                 if (!limit) {
                     throw new Error('No limit parameter provided.');
                 }
@@ -173,6 +179,10 @@
                 if (page) _endpoint += `&page=${page}`;
                 if (q) _endpoint += `&q=${q}`;
 
+                if (customParams) {
+                    _endpoint += CrudAPIUtils.getCustomParamsString(customParams, '&');
+                }
+
                 const requestOptions = await buildRequestOptions({ method: 'GET' }, options.findAll.auth);
                 const response = await fetch(_endpoint, requestOptions);
                 const data = await response.json();
@@ -187,6 +197,7 @@
              * @param {object} params - The parameters to use for the create operation.
              * @returns {object} The created record.
              * @example const record = await create({ name: 'John Doe', email: 'test@example.com' });
+             * @example const record = await create({ name: 'John Doe', email: 'test@example.com', responseInclude: ['profile'] });
              */
             this.create = async function (params) {
                 for (let key of options.create.properties) {
@@ -221,6 +232,7 @@
              * @param {object} params - The parameters to use for the update operation.
              * @returns {object} The updated record.
              * @example const record = await update({ id: 1, name: 'Jane Doe', email: 'test2@example.com' });
+             * @example const record = await update({ id: 1, name: 'Jane Doe', email: 'test2@example.com', responseInclude: ['profile'] });
              */
             this.update = async function (params) {
                 if (options.update.requiredProperties) {
@@ -412,6 +424,23 @@
         }
 
         return includeString;
+    }
+
+    /**
+     * @function getCustomParamsString
+     * @description Get the custom parameters string for the query
+     * @param {Object} customParams - The custom parameters
+     * @param {String} customParamsString - The custom parameters string
+     * @returns {String} The custom parameters string
+     * @example getCustomeParamsString({ key1: 'value1', key2: 'value2' })
+     * @static
+     */
+    static getCustomParamsString(customParams, customParamsString = '') {
+        for (let key of Object.keys(customParams)) {
+            customParamsString += `${key}=${customParams[key]}&`;
+        }
+        customParamsString = customParamsString.slice(0, -1);
+        return customParamsString;
     }
 }
 

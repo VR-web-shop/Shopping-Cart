@@ -25,21 +25,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
     "@vr-web-shop/meteor": "1.0.59",
-=======
-    "@vr-web-shop/meteor": "1.0.58",
->>>>>>> 8da1481 (Prepare deployment)
-=======
->>>>>>> parent of 8da1481 (Prepare deployment)
-=======
->>>>>>> parent of 8da1481 (Prepare deployment)
-=======
-    "@vr-web-shop/meteor": "1.0.58",
->>>>>>> 8da1481 (Prepare deployment)
     "nodemon": "^3.1.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
