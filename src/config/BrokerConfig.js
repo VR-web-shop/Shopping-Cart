@@ -31,7 +31,6 @@ import pkg from 'amqplib';
 
     /*
     TODO: BELOW
-    addListener('discard_product_entity', ProductEntityService.create.bind(ProductEntityService))
     addListener('failed_checkout', ProductEntityService.create.bind(ProductEntityService))
     addListener('successful_checkout', ProductEntityService.update.bind(ProductEntityService))
 
