@@ -25,7 +25,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@vr-web-shop/meteor": "1.0.58",
+    "@vr-web-shop/meteor": "1.0.59",
     "nodemon": "^3.1.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
