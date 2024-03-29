@@ -29,10 +29,10 @@ const NewCartAuthentication = function (uuid) {
 const AuthorizeJWTCart = function(req, res, next) {
     // Is the body in the url?
     let { uuid } = req.params;
-    let { token } = req.query;
+    let { access_token: token } = req.query;
     // or is it in the body?
     if (!uuid) uuid = req.body.cart_uuid;
-    if (!token) token = req.body.token;
+    if (!token) token = req.body.access_token;
 
     if (!uuid || !token) {
         return res.status(401).send({ message: 'Unauthorized' });
