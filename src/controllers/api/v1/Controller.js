@@ -92,6 +92,12 @@ export default {
     }),
 
     CartProductEntityController: RestController(`${prefix}cart_product_entities`, 'uuid', CartProductEntity, {
+        findAll: {
+            middleware: [CartJWT.AuthorizeJWTCart],
+            findProperties: ['cart_uuid', 'product_entity_uuid'],
+            whereProperties: ['cart_uuid', 'product_entity_uuid'],
+            includes: ['Cart', 'ProductEntity']
+        },
         /**
          * Users can create cart product entities for the product's they
          * want to add to their cart.

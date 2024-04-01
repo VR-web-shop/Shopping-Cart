@@ -477,7 +477,7 @@
             "CartStateController": "{\"serverURL\":\"http://http://localhost:3004\",\"endpoint\":\"/api/v1/cart_states\",\"foreignKeyName\":\"name\",\"options\":{\"authorization\":{\"storage\":\"localStorage\",\"key\":\"auth\"},\"find\":{\"auth\":false},\"findAll\":{\"auth\":false}}}"
         },
         {
-            "CartProductEntityController": "{\"serverURL\":\"http://http://localhost:3004\",\"endpoint\":\"/api/v1/cart_product_entities\",\"foreignKeyName\":\"uuid\",\"options\":{\"authorization\":{\"storage\":\"localStorage\",\"key\":\"auth\"},\"create\":{\"auth\":true,\"properties\":[\"cart_uuid\",\"product_entity_uuid\",\"access_token\"]},\"update\":{\"auth\":true,\"properties\":[\"access_token\"]}}}"
+            "CartProductEntityController": "{\"serverURL\":\"http://http://localhost:3004\",\"endpoint\":\"/api/v1/cart_product_entities\",\"foreignKeyName\":\"uuid\",\"options\":{\"authorization\":{\"storage\":\"localStorage\",\"key\":\"auth\"},\"findAll\":{\"auth\":true},\"create\":{\"auth\":true,\"properties\":[\"cart_uuid\",\"product_entity_uuid\",\"access_token\"]},\"update\":{\"auth\":true,\"properties\":[\"access_token\"]}}}"
         },
         {
             "ProductEntityController": "{\"serverURL\":\"http://http://localhost:3004\",\"endpoint\":\"/api/v1/product_entities\",\"foreignKeyName\":\"uuid\",\"options\":{\"authorization\":{\"storage\":\"localStorage\",\"key\":\"auth\"},\"find\":{\"auth\":false},\"findAll\":{\"auth\":false},\"create\":{\"auth\":false,\"properties\":[\"uuid\",\"product_entity_state_name\"]},\"update\":{\"auth\":false,\"properties\":[\"product_entity_state_name\"]},\"delete\":{\"auth\":false}}}"

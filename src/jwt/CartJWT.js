@@ -18,9 +18,7 @@ const NewCartAuthentication = function (uuid) {
     const iat = new Date().getTime() / 1000;
     const payload = { iat, sub: uuid };
 
-    const access_token = Jwt.sign(payload, JWT_CART_ACCESS_SECRET, { 
-        expiresIn: JWT_CART_ACCESS_EXPIRES_IN 
-    });
+    const access_token = Jwt.sign(payload, JWT_CART_ACCESS_SECRET);
     
     return access_token;
 }
@@ -37,9 +35,10 @@ const AuthorizeJWTCart = function(req, res, next) {
     if (!uuid || !token) {
         return res.status(401).send({ message: 'Unauthorized' });
     }
-
+    
     try {
         const decoded = Jwt.verify(token, process.env.JWT_CART_ACCESS_SECRET);
+        console.log('decoded:', decoded);
         const { sub } = decoded;
         if (sub !== uuid) {
             return res.status(401).send({ message: 'Unauthorized' });
@@ -47,6 +46,7 @@ const AuthorizeJWTCart = function(req, res, next) {
 
         next();
     } catch (error) {
+        console.error(error);
         return res.status(401).send({ message: 'Unauthorized' });
     }
 }
