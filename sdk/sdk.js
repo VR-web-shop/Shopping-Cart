@@ -200,26 +200,35 @@
              * @example const record = await create({ name: 'John Doe', email: 'test@example.com', responseInclude: ['profile'] });
              */
             this.create = async function (params) {
+                const isFormData = params instanceof FormData;
+
                 for (let key of options.create.properties) {
-                    if (!params[key]) {
+                    const val = isFormData ? params.get(key) : params[key];
+                    if (!val) {
                         throw new Error(`No ${key} provided.`);
                     }
                 }
 
-                if (params.responseInclude) {
-                    params.responseInclude = CrudAPIUtils.getIncludeString(params.responseInclude);
+                const responseInclude = isFormData ? params.get('responseInclude') : params.responseInclude;
+                if (responseInclude) {
+                    const val = CrudAPIUtils.getIncludeString(responseInclude);
+                    if (isFormData) params.set('responseInclude', val);
+                    else params.responseInclude = val;
                 }
 
-                const body = JSON.stringify(params);
-                const requestOptions = await buildRequestOptions({
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body
-                }, options.create.auth);
-                const response = await fetch(getUrl(), requestOptions);
+                const requestOptions = await buildRequestOptions(
+                    { method: 'POST', headers: {} }, 
+                    options.create.auth
+                );
 
+                if (params instanceof FormData) {
+                    requestOptions.body = params;
+                } else {
+                    requestOptions.body = JSON.stringify(params);
+                    requestOptions.headers['Content-Type'] = 'application/json';
+                }
+          
+                const response = await fetch(getUrl(), requestOptions);
                 const data = await response.json();
                 return data;
             };
@@ -235,31 +244,41 @@
              * @example const record = await update({ id: 1, name: 'Jane Doe', email: 'test2@example.com', responseInclude: ['profile'] });
              */
             this.update = async function (params) {
+                const isFormData = params instanceof FormData;
+
                 if (options.update.requiredProperties) {
                     for (let key of options.update.requiredProperties) {
-                        if (!params[key]) {
+                        const val = isFormData ? params.get(key) : params[key];
+                        if (!val) {
                             throw new Error(`No ${key} provided.`);
                         }
                     }
                 }
 
-                const key = params[foreignKeyName];
+                const key = isFormData ? params.get(foreignKeyName) : params[foreignKeyName];
                 if (!key) {
                     throw new Error(`No ${foreignKeyName} provided.`);
                 }
 
-                if (params.responseInclude) {
-                    params.responseInclude = CrudAPIUtils.getIncludeString(params.responseInclude);
+                const responseInclude = isFormData ? params.get('responseInclude') : params.responseInclude;
+                if (responseInclude) {
+                    const val = CrudAPIUtils.getIncludeString(responseInclude);
+                    if (isFormData) params.set('responseInclude', val);
+                    else params.responseInclude = val;
                 }
 
-                const body = JSON.stringify(params);
-                const requestOptions = await buildRequestOptions({
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body
-                }, options.update.auth);
+                const requestOptions = await buildRequestOptions(
+                    { method: 'PUT', headers: {} }, 
+                    options.update.auth
+                );
+
+                if (params instanceof FormData) {
+                    requestOptions.body = params;
+                } else {
+                    requestOptions.body = JSON.stringify(params);
+                    requestOptions.headers['Content-Type'] = 'application/json';
+                }
+
                 const response = await fetch(getUrl(), requestOptions);
                 const data = await response.json();
                 return data;
@@ -452,7 +471,7 @@
     const apis = {
     "apis": [
         {
-            "CartController": "{\"serverURL\":\"http://http://localhost:3004\",\"endpoint\":\"/api/v1/carts\",\"foreignKeyName\":\"uuid\",\"options\":{\"authorization\":{\"storage\":\"localStorage\",\"key\":\"auth\"},\"find\":{\"auth\":true},\"findAll\":{\"auth\":true},\"create\":{\"auth\":false,\"properties\":[]},\"delete\":{\"auth\":true}}}"
+            "CartController": "{\"serverURL\":\"http://http://localhost:3004\",\"endpoint\":\"/api/v1/carts\",\"foreignKeyName\":\"uuid\",\"options\":{\"authorization\":{\"storage\":\"localStorage\",\"key\":\"auth\"},\"find\":{\"auth\":true},\"findAll\":{\"auth\":true},\"create\":{\"auth\":false,\"properties\":[]},\"update\":{\"auth\":true,\"properties\":[\"cart_state_name\",\"access_token\"]},\"delete\":{\"auth\":true}}}"
         },
         {
             "CartStateController": "{\"serverURL\":\"http://http://localhost:3004\",\"endpoint\":\"/api/v1/cart_states\",\"foreignKeyName\":\"name\",\"options\":{\"authorization\":{\"storage\":\"localStorage\",\"key\":\"auth\"},\"find\":{\"auth\":false},\"findAll\":{\"auth\":false}}}"

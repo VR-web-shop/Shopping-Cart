@@ -92,7 +92,6 @@ export default {
     }),
 
     CartProductEntityController: RestController(`${prefix}cart_product_entities`, 'uuid', CartProductEntity, {
-        
         /**
          * Users can create cart product entities for the product's they
          * want to add to their cart.
@@ -162,8 +161,7 @@ export default {
             middleware: [],
             findProperties: ['uuid'],
             whereProperties: ['uuid'],
-            includes: ['ProductEntityState', 'Cart'],
-            serviceOnly: true,
+            includes: ['ProductEntityState', 'Cart', 'Product'],
         },
         create: {
             properties: ['uuid', 'product_entity_state_name'],

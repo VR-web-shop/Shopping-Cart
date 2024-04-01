@@ -1,7 +1,7 @@
 import pkg from 'amqplib';
 
-import Product from '../../../products/src/models/Product.js';
-import ProductEntity from '../../../products/src/models/ProductEntity.js';
+import Product from '../../src/models/Product.js';
+import ProductEntity from '../../src/models/ProductEntity.js';
 
 const url = process.env.MESSAGE_BROKER_URL;
 const queues = [];
@@ -26,11 +26,13 @@ export const removeListener = (queueName) => {
 };
 
 export const sendMessage = (queueName, msg) => {
+    const text = JSON.stringify(msg);
+
     ch.assertQueue(queueName, { durable: false });
-    ch.sendToQueue(queueName, Buffer.from(msg));
+    ch.sendToQueue(queueName, Buffer.from(text));
 };
 
-(async () => {
+export const connect = async () => {
     conn = await pkg.connect(url);
     ch = await conn.createChannel();
 
@@ -47,4 +49,4 @@ export const sendMessage = (queueName, msg) => {
     sendMessage('initiate_cart_checkout', [{product_entity}...])
     sendMessage('cancel_cart_checkout', [{product_entity}...])
     */
-})()
+}

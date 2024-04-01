@@ -23,7 +23,7 @@ const Product = Database.define("Product", {
     updatedAt: 'updated_at',
 });
 
-ProductEntity.belongsTo(Product, { foreignKey: 'product_uuid', targetKey: 'uuid', as: 'ProductEntity' });
+ProductEntity.belongsTo(Product, { foreignKey: 'product_uuid', targetKey: 'uuid', as: 'Product' });
 Product.hasMany(ProductEntity);
 
 export default Product;
