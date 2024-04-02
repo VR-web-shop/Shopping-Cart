@@ -173,7 +173,7 @@ export default {
             includes: ['ProductOrderState', 'ProductOrderEntity'],
         },
         create: {
-            properties: ['name', 'email', 'address', 'city', 'country', 'postal_code', 'deliver_option_name', 'payment_method_name', 'cart_uuid'],
+            properties: ['name', 'email', 'address', 'city', 'country', 'postal_code', 'deliver_option_name', 'payment_option_name', 'cart_uuid'],
             middleware: [],
             hooks: {
                 after: async (req, res, params, entity) => {
@@ -181,7 +181,7 @@ export default {
             }
         },
         update: {
-            properties: ['name', 'email', 'address', 'city', 'country', 'postal_code', 'deliver_option_name', 'payment_method_name', 'cart_uuid'],
+            properties: ['name', 'email', 'address', 'city', 'country', 'postal_code', 'deliver_option_name', 'payment_option_name', 'cart_uuid'],
             middleware: [],
             hooks: {
                 after: async (req, res, params, entity) => {
