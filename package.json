@@ -1,6 +1,6 @@
 {
   "name": "@vr-web-shop/shopping-cart",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "",
   "type": "module",
   "main": "/dist_sdk/bundle.js",
