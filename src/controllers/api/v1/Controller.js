@@ -17,7 +17,7 @@ import { sendMessage } from "../../../config/BrokerConfig.js";
 
 const prefix = '/api/v1/';
 const RestController = meteor.RestController;
-const debug = false;
+const debug = true;
 
 export default {
     CartController: RestController(`${prefix}carts`, 'uuid', Cart, {
@@ -56,17 +56,17 @@ export default {
                 CartJWT.AuthorizeJWTCart
             ],
             customResponse: async (cart) => {
-                const cartProductEntities = await CartProductEntity.findAll({ where: { cart_uuid: cart.uuid } });
-                const productEntityUUIDs = cartProductEntities.map(cartProductEntity => cartProductEntity.product_entity_uuid);
-                const productEntities = await ProductEntity.findAll({ where: { uuid: productEntityUUIDs } });
-
-                if (cart.cart_state_name === CART_STATES.WAITING_FOR_CHECKOUT) {
-                    // Let billing know that the cart is ready for checkout
-                    sendMessage('initiate_cart_checkout', { cart, productEntities });
-                }
-                else if (cart.cart_state_name === CART_STATES.OPEN_FOR_PRODUCT_ENTITIES) {
-                    // Let billing know that the cart checkout is cancelled
-                    sendMessage('cancel_cart_checkout', { cart, productEntities });
+                // If the cart is closed, we should cancel all open orders
+                if (cart.cart_state_name === CART_STATES.OPEN_FOR_PRODUCT_ENTITIES) {
+                    // If the customer has any open orders and they cancel the checkout,
+                    // we should cancel the orders as well.
+                    const openProductOrders = await ProductOrder.findAll({ where: { cart_uuid: cart.uuid, product_order_state_name: PRODUCT_ORDER_STATES.WAITING_FOR_PAYMENT } });
+                    for (const openProductOrder of openProductOrders) {
+                        await openProductOrder.update({ product_order_state_name: PRODUCT_ORDER_STATES.CANCELLED_BY_CUSTOMER });
+                        
+                        const productOrderEntities = await ProductOrderEntity.findAll({ where: { product_order_uuid: openProductOrder.uuid } });
+                        sendMessage('products_update_product_order', { productOrder: openProductOrder, productOrderEntities });
+                    }
                 }
 
                 return cart;
@@ -131,8 +131,8 @@ export default {
                 // Let everyone know that the product entity is reserved by the customer
                 const productEntity = await ProductEntity.findOne({ where: { uuid: cartProductEntity.product_entity_uuid } });
                 const result = await productEntity.update({ product_entity_state_name: PRODUCT_ENTITY_STATES.RESERVERED_BY_CUSTOMER_CART })
-                sendMessage('scenes_reserve_product_entity_to_cart', result);
-                sendMessage('products_reserve_product_entity_to_cart', result);
+                sendMessage('scenes_update_product_entity', result);
+                sendMessage('products_update_product_entity', result);
 
                 return cartProductEntity;
             }
@@ -148,8 +148,8 @@ export default {
                 // Let everyone know that the product entity is released by the customer
                 const productEntity = await ProductEntity.findOne({ where: { uuid: cartProductEntity.product_entity_uuid } });
                 const result = await productEntity.update({ product_entity_state_name: PRODUCT_ENTITY_STATES.AVAILABLE_FOR_PURCHASE })
-                sendMessage('scenes_release_product_entity_from_cart', result);
-                sendMessage('products_release_product_entity_from_cart', result);
+                sendMessage('scenes_update_product_entity', result);
+                sendMessage('products_update_product_entity', result);
 
                 // This should properly be a delete request, but the SDK generator,
                 // does not support parameters in the delete request besides the foreign key,
@@ -164,7 +164,12 @@ export default {
     ProductOrderController: RestController(`${prefix}product_orders`, 'uuid', ProductOrder, {
         find: {
             middleware: [],
-            includes: ['ProductOrderState', 'ProductOrderEntity'],
+            includes: [
+                { endpoint: 'product_order_entities', model: 'ProductOrderEntity' },
+                { endpoint: 'product_order_states', model: 'ProductOrderState' },
+                { endpoint: 'deliver_options', model: 'DeliverOption' },
+                { endpoint: 'payment_options', model: 'PaymentOption' }
+            ]
         },
         findAll: {
             middleware: [],
@@ -177,28 +182,44 @@ export default {
             middleware: [],
             hooks: {
                 after: async (req, res, params, entity) => {
+                    // Let everyone know that the product order is created
+                    const productOrderEntities = await ProductOrderEntity.findAll({ where: { product_order_uuid: entity.uuid } });
+                    sendMessage('products_new_product_order', { productOrder: entity, productOrderEntities });
                 }
             }
         },
         update: {
-            properties: ['name', 'email', 'address', 'city', 'country', 'postal_code', 'deliver_option_name', 'payment_option_name', 'cart_uuid'],
+            properties: ['name', 'email', 'address', 'city', 'product_order_state_name', 'country', 'postal_code', 'deliver_option_name', 'payment_option_name', 'cart_uuid'],
             middleware: [],
             hooks: {
                 after: async (req, res, params, entity) => {
-                }
-            }
-        },
-        delete: {
-            middleware: [],
-            hooks: {
-                after: async (req, res, params, entity) => {
-                    const orderEntities = await CartProductEntity.findAll({ 
-                        where: { cart_uuid: entity.cart_uuid },
-                        include: ProductEntity 
-                    });
-                    
-                    // Let billing know that the product order is updated
-                    sendMessage('billing_product_order_discard', { entity, orderEntities });
+                    console.log(entity.product_order_state_name);
+                    /**
+                     * The current implementation of the shopping cart does only support mock purchases.
+                     * This means that if a proder order's state is moved to 'WAITING_FOR_PAYMENT', this
+                     * is considered a successful purchase. In a real-world scenario, this would have
+                     * to go through a payment gateway and the state would be updated based on the payment
+                     * gateway's response.
+                     */
+                    if (entity.product_order_state_name === PRODUCT_ORDER_STATES.WAITING_FOR_SHIPMENT) {
+                        const cartProductEntities = await CartProductEntity.findAll({ where: { cart_uuid: entity.cart_uuid } });
+                        const productEntities = await ProductEntity.findAll({ where: { uuid: cartProductEntities.map(cpe => cpe.product_entity_uuid) } });
+                        for (const productEntity of productEntities) {
+                            const result = await productEntity.update({ product_entity_state_name: PRODUCT_ENTITY_STATES.RESERVERED_BY_CUSTOMER_ORDER })
+                            sendMessage('scenes_update_product_entity', result);
+                            sendMessage('products_update_product_entity', result);
+                        }
+
+                        // Change the cart state to OPEN_FOR_PRODUCT_ENTITIES
+                        const cart = await Cart.findOne({ where: { uuid: entity.cart_uuid } });
+                        await cart.update({ cart_state_name: CART_STATES.OPEN_FOR_PRODUCT_ENTITIES });
+                        // Remove the cart product entities
+                        await CartProductEntity.destroy({ where: { cart_uuid: entity.cart_uuid } });
+                    }
+
+                    // Let everyone know that the product order is updated
+                    const productOrderEntities = await ProductOrderEntity.findAll({ where: { product_order_uuid: entity.uuid } });
+                    sendMessage('products_update_product_order', { productOrder: entity, productOrderEntities });
                 }
             }
         },
@@ -208,24 +229,16 @@ export default {
     ProductOrderEntityController: RestController(`${prefix}product_order_entities`, 'uuid', ProductOrderEntity, {
         find: {
             middleware: [],
-            includes: ['ProductOrder', 'ProductEntity'],
+            includes: [
+                { endpoint: 'product_orders', model: 'ProductOrder' },
+                { endpoint: 'product_entities', model: 'ProductEntity' }
+            ]
         },
         findAll: {
             middleware: [],
-            findProperties: ['uuid'],
-            whereProperties: ['uuid'],
+            findProperties: ['uuid', 'product_order_uuid'],
+            whereProperties: ['uuid', 'product_order_uuid'],
             includes: ['ProductOrder', 'ProductEntity'],
-        },
-        create: {
-            properties: ['product_order_uuid', 'product_entity_uuid'],
-            middleware: [],
-        },
-        update: {
-            properties: ['product_order_uuid', 'product_entity_uuid'],
-            middleware: [],
-        },
-        delete: {
-            middleware: [],
         },
         debug
     }),

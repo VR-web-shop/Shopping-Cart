@@ -44,8 +44,8 @@ const ProductOrder = Database.define("ProductOrder", {
             if (!productOrder.dataValues.product_order_state_name) {
                 productOrder.dataValues.product_order_state_name = PRODUCT_ORDER_STATES.WAITING_FOR_PAYMENT;
             }
-            
-    
+        },
+        afterCreate: async (productOrder) => {
             const cart = await Cart.findOne({ where: { uuid: productOrder.dataValues.cart_uuid }, include: [
                 { model: ProductEntity, as: 'ProductEntity' }            
             ]});

@@ -2,6 +2,10 @@ import pkg from 'amqplib';
 
 import Product from '../../src/models/Product.js';
 import ProductEntity from '../../src/models/ProductEntity.js';
+import ProductOrder from '../models/ProductOrder.js';
+import ProductOrderEntity from '../models/ProductOrderEntity.js';
+import { PRODUCT_ORDER_STATES } from '../models/ProductOrderState.js';
+import CartProductEntity from '../models/CartProductEntity.js';
 
 const url = process.env.MESSAGE_BROKER_URL;
 const queues = [];
@@ -36,17 +40,36 @@ export const connect = async () => {
     conn = await pkg.connect(url);
     ch = await conn.createChannel();
 
+    /**
+     * When an employee creates a new product,
+     * the shopping cart's application receives a message to create a new product.
+     */
     addListener('shopping_cart_new_product', async (msg) => await Product.create(msg));
-    addListener('shopping_cart_new_product_entity', async (msg) => await ProductEntity.create(msg))
-    /*
-    TODO: BELOW
-    addListener('discard_product_entity', ProductEntityService.create.bind(ProductEntityService))
-    addListener('failed_checkout', ProductEntityService.create.bind(ProductEntityService))
-    addListener('successful_checkout', ProductEntityService.update.bind(ProductEntityService))
 
-    sendMessage('reserve_product_entity_to_cart', {product_entity})
-    sendMessage('release_product_entity_from_cart', {product_entity})
-    sendMessage('initiate_cart_checkout', [{product_entity}...])
-    sendMessage('cancel_cart_checkout', [{product_entity}...])
-    */
+    /**
+     * When an employee creates a new product entity,
+     * the shopping cart's application receives a message to create a new product entity.
+     */
+    addListener('shopping_cart_new_product_entity', async (msg) => await ProductEntity.create(msg))
+
+    /**
+     * When an employee updates a product entity,
+     * the shopping cart's application receives a message to update the product entity's state.
+     */
+    addListener('shopping_cart_update_product_entity', async (msg) => {
+        const uuid = msg.uuid;
+        const entity = await ProductEntity.findOne({ where: { uuid } });
+        await entity.update({
+            product_entity_state_name: msg.product_entity_state_name
+        });
+    })
+
+    /**
+     * When an employee updates a product order,
+     * the shopping cart's application receives a message to update the product order.
+     */
+    addListener('shopping_cart_update_product_order', async (msg) => {
+        msg.ProductOrderStateName = msg.product_order_state_name;
+        await ProductOrder.update(msg, { where: { uuid: msg.uuid } });
+    })
 }
