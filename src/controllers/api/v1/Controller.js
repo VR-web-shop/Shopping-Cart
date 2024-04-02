@@ -166,8 +166,8 @@ export default {
         },
         findAll: {
             middleware: [],
-            findProperties: ['uuid'],
-            whereProperties: ['uuid'],
+            findProperties: ['uuid', 'cart_uuid', 'product_order_state_name'],
+            whereProperties: ['uuid', 'cart_uuid', 'product_order_state_name'],
             includes: ['ProductOrderState', 'ProductOrderEntity'],
         },
         create: {
