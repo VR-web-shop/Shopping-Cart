@@ -10,6 +10,8 @@ import ProductEntityState, { PRODUCT_ENTITY_STATES } from './src/models/ProductE
 import ProductOrder from './src/models/ProductOrder.js';
 import ProductOrderState, { PRODUCT_ORDER_STATES } from './src/models/ProductOrderState.js';
 import ProductOrderEntity from './src/models/ProductOrderEntity.js';
+import DeliverOption, { DELIVER_OPTIONS } from './src/models/DeliverOption.js';
+import PaymentOption, { PAYMENT_OPTIONS } from './src/models/PaymentOption.js';
 
 (async () => {
     await database.sync({ force: true });
@@ -24,5 +26,13 @@ import ProductOrderEntity from './src/models/ProductOrderEntity.js';
 
     for (const productOrderStateName of Object.values(PRODUCT_ORDER_STATES)) {
         await ProductOrderState.findOrCreate({ where: { name: productOrderStateName } });
+    }
+
+    for (const deliverOption of Object.values(DELIVER_OPTIONS)) {
+        await DeliverOption.findOrCreate({ where: deliverOption });
+    }
+
+    for (const paymentOption of Object.values(PAYMENT_OPTIONS)) {
+        await PaymentOption.findOrCreate({ where: paymentOption });
     }
 })();

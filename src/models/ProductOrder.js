@@ -3,11 +3,14 @@ import Database from './Database.js';
 import ProductEntity from './ProductEntity.js';
 import ProductOrderEntity from './ProductOrderEntity.js';
 import ProductOrderState, { PRODUCT_ORDER_STATES} from './ProductOrderState.js';
+import DeliverOption from './DeliverOption.js';
+import PaymentOption from './PaymentOption.js';
 import Cart from './Cart.js';
 
 const ProductOrder = Database.define("ProductOrder", {
     uuid: {
         type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         allowNull: false,
         primaryKey: true
     },
@@ -35,39 +38,33 @@ const ProductOrder = Database.define("ProductOrder", {
         type: DataTypes.STRING,
         allowNull: false
     },
-    deliveryOption: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    paymentMethod: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
 }, {
     hooks: {
         beforeCreate: async (productOrder) => {
-            if (!productOrder.product_order_state_name) {
-                productOrder.product_order_state_name = PRODUCT_ORDER_STATES.WAITING_FOR_PAYMENT;
+            if (!productOrder.dataValues.product_order_state_name) {
+                productOrder.dataValues.product_order_state_name = PRODUCT_ORDER_STATES.WAITING_FOR_PAYMENT;
             }
-
-            // Add all products from the cart to the product order
-            const cart = await Cart.findOne({ where: { uuid: productOrder.cart_uuid }, include: ProductEntity });
+            
+    
+            const cart = await Cart.findOne({ where: { uuid: productOrder.dataValues.cart_uuid }, include: [
+                { model: ProductEntity, as: 'ProductEntity' }            
+            ]});
             for (const productEntity of cart.ProductEntity) {
                 await ProductOrderEntity.create({
-                    product_order_uuid: productOrder.uuid,
-                    product_entity_uuid: productEntity.uuid
+                    product_order_uuid: productOrder.dataValues.uuid,
+                    product_entity_uuid: productEntity.dataValues.uuid
                 });
             }
         },
         beforeUpdate: async (productOrder) => {
-            // Delete all ProductOrderEntity instances associated with this ProductOrder
-            await ProductOrderEntity.destroy({ where: { product_order_uuid: productOrder.uuid } });
-            // Create new ProductOrderEntity instances associated with this ProductOrder
-            const cart = await Cart.findOne({ where: { uuid: productOrder.cart_uuid }, include: ProductEntity });
+            await ProductOrderEntity.destroy({ where: { product_order_uuid: productOrder.dataValues.uuid } });
+            const cart = await Cart.findOne({ where: { uuid: productOrder.dataValues.cart_uuid }, include: [
+                { model: ProductEntity, as: 'ProductEntity' }            
+            ]});
             for (const productEntity of cart.ProductEntity) {
                 await ProductOrderEntity.create({
-                    product_order_uuid: productOrder.uuid,
-                    product_entity_uuid: productEntity.uuid
+                    product_order_uuid: productOrder.dataValues.uuid,
+                    product_entity_uuid: productEntity.dataValues.uuid
                 });
             }
         }
@@ -78,10 +75,16 @@ const ProductOrder = Database.define("ProductOrder", {
     updatedAt: 'updated_at',
 });
 
-ProductOrder.belongsTo(Cart);
+ProductOrder.belongsTo(DeliverOption, { foreignKey: 'deliver_option_name', targetKey: 'name', as: 'DeliverOption' });
+DeliverOption.hasMany(ProductOrder);
+
+ProductOrder.belongsTo(PaymentOption, { foreignKey: 'payment_option_name', targetKey: 'name', as: 'PaymentOption' });
+PaymentOption.hasMany(ProductOrder);
+
+ProductOrder.belongsTo(Cart, { foreignKey: 'cart_uuid', targetKey: 'uuid' });
 Cart.hasMany(ProductOrder);
 
-ProductOrder.belongsTo(ProductOrderState);
+ProductOrder.belongsTo(ProductOrderState, { foreignKey: 'product_order_state_name', targetKey: 'name' });
 ProductOrderState.hasMany(ProductOrder);
 
 ProductOrder.belongsToMany(ProductEntity, { through: ProductOrderEntity });

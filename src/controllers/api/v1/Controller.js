@@ -10,6 +10,8 @@ import ProductEntityState, { PRODUCT_ENTITY_STATES } from "../../../models/Produ
 import ProductOrder from "../../../models/ProductOrder.js";
 import ProductOrderEntity from "../../../models/ProductOrderEntity.js";
 import ProductOrderState, { PRODUCT_ORDER_STATES } from "../../../models/ProductOrderState.js";
+import DeliverOption, { DELIVER_OPTIONS } from "../../../models/DeliverOption.js";
+import PaymentOption, { PAYMENT_OPTIONS } from "../../../models/PaymentOption.js";
 
 import { sendMessage } from "../../../config/BrokerConfig.js";
 
@@ -171,32 +173,18 @@ export default {
             includes: ['ProductOrderState', 'ProductOrderEntity'],
         },
         create: {
-            properties: ['name', 'email', 'address', 'city', 'country', 'postal_code', 'delivery_option', 'payment_method', 'cart_uuid'],
+            properties: ['name', 'email', 'address', 'city', 'country', 'postal_code', 'deliver_option_name', 'payment_method_name', 'cart_uuid'],
             middleware: [],
             hooks: {
                 after: async (req, res, params, entity) => {
-                    const orderEntities = await CartProductEntity.findAll({ 
-                        where: { cart_uuid: entity.cart_uuid },
-                        include: ProductEntity 
-                    });
-                    
-                    // Let billing know that the product order is created
-                    sendMessage('billing_product_order_create', { entity, orderEntities });
                 }
             }
         },
         update: {
-            properties: ['name', 'email', 'address', 'city', 'country', 'postal_code', 'delivery_option', 'payment_method', 'cart_uuid'],
+            properties: ['name', 'email', 'address', 'city', 'country', 'postal_code', 'deliver_option_name', 'payment_method_name', 'cart_uuid'],
             middleware: [],
             hooks: {
                 after: async (req, res, params, entity) => {
-                    const orderEntities = await CartProductEntity.findAll({ 
-                        where: { cart_uuid: entity.cart_uuid },
-                        include: ProductEntity 
-                    });
-                    
-                    // Let billing know that the product order is updated
-                    sendMessage('billing_product_order_update', { entity, orderEntities });
                 }
             }
         },
@@ -243,6 +231,34 @@ export default {
     }),
 
     ProductOrderStateController: RestController(`${prefix}product_order_states`, 'name', ProductOrderState, {
+        find: {
+            middleware: [],
+            includes: ['ProductOrder'],
+        },
+        findAll: {
+            middleware: [],
+            findProperties: ['name'],
+            whereProperties: ['name'],
+            includes: ['ProductOrder'],
+        },
+        debug
+    }),
+
+    DeliverOptionController: RestController(`${prefix}deliver_options`, 'name', DeliverOption, {
+        find: {
+            middleware: [],
+            includes: ['ProductOrder'],
+        },
+        findAll: {
+            middleware: [],
+            findProperties: ['name'],
+            whereProperties: ['name'],
+            includes: ['ProductOrder'],
+        },
+        debug
+    }),
+
+    PaymentOptionController: RestController(`${prefix}payment_options`, 'name', PaymentOption, {
         find: {
             middleware: [],
             includes: ['ProductOrder'],
