@@ -1,6 +1,6 @@
 import { DataTypes } from 'sequelize';
 import Database from './Database.js';
-import CartState from './CartState.js';
+import CartState, { CART_STATES } from './CartState.js';
 import CartProductEntity from './CartProductEntity.js';
 import ProductEntity from './ProductEntity.js';
 
@@ -11,6 +11,13 @@ const Cart = Database.define("Cart", {
         primaryKey: true
     },
 }, {
+    hooks: {
+        beforeCreate: async (cart) => {
+            if (cart.cart_state_name === undefined) {
+                cart.cart_state_name = CART_STATES.OPEN_FOR_PRODUCT_ENTITIES;
+            }
+        }
+    },
     underscored: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',

@@ -29,7 +29,7 @@ const AuthorizeJWTCart = function(req, res, next) {
     let { uuid } = req.params;
     let { access_token: token } = req.query;
     // or is it in the body?
-    if (!uuid) uuid = req.body.cart_uuid;
+    if (!uuid) uuid = req.body.cart_uuid || req.body.uuid;
     if (!token) token = req.body.access_token;
 
     if (!uuid || !token) {
@@ -38,7 +38,6 @@ const AuthorizeJWTCart = function(req, res, next) {
     
     try {
         const decoded = Jwt.verify(token, process.env.JWT_CART_ACCESS_SECRET);
-        console.log('decoded:', decoded);
         const { sub } = decoded;
         if (sub !== uuid) {
             return res.status(401).send({ message: 'Unauthorized' });

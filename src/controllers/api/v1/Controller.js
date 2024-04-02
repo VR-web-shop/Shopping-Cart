@@ -7,6 +7,9 @@ import CartState, { CART_STATES } from "../../../models/CartState.js";
 import CartProductEntity from "../../../models/CartProductEntity.js";
 import ProductEntity from "../../../models/ProductEntity.js";
 import ProductEntityState, { PRODUCT_ENTITY_STATES } from "../../../models/ProductEntityState.js";
+import ProductOrder from "../../../models/ProductOrder.js";
+import ProductOrderEntity from "../../../models/ProductOrderEntity.js";
+import ProductOrderState, { PRODUCT_ORDER_STATES } from "../../../models/ProductOrderState.js";
 
 import { sendMessage } from "../../../config/BrokerConfig.js";
 
@@ -48,7 +51,6 @@ export default {
         update: {
             properties: ['cart_state_name', 'access_token'],
             middleware: [
-                MiddlewareJWT.AuthorizeJWT,
                 CartJWT.AuthorizeJWTCart
             ],
             customResponse: async (cart) => {
@@ -150,9 +152,106 @@ export default {
                 // This should properly be a delete request, but the SDK generator,
                 // does not support parameters in the delete request besides the foreign key,
                 // making it a bit more difficult to include the access token :-).
-                await CartProductEntity.destroy({ where: { uuid: cartProduct.uuid } });
+                await CartProductEntity.destroy({ where: { uuid: cartProductEntity.uuid } });
                 return { message: 'Product entity removed from cart' };
             }
+        },
+        debug
+    }),
+
+    ProductOrderController: RestController(`${prefix}product_orders`, 'uuid', ProductOrder, {
+        find: {
+            middleware: [],
+            includes: ['ProductOrderState', 'ProductOrderEntity'],
+        },
+        findAll: {
+            middleware: [],
+            findProperties: ['uuid'],
+            whereProperties: ['uuid'],
+            includes: ['ProductOrderState', 'ProductOrderEntity'],
+        },
+        create: {
+            properties: ['name', 'email', 'address', 'city', 'country', 'postal_code', 'deliveryOption', 'paymentMethod', 'cart_uuid'],
+            middleware: [],
+            hooks: {
+                after: async (req, res, params, entity) => {
+                    const orderEntities = await CartProductEntity.findAll({ 
+                        where: { cart_uuid: entity.cart_uuid },
+                        include: ProductEntity 
+                    });
+                    
+                    // Let billing know that the product order is created
+                    sendMessage('billing_product_order_create', { entity, orderEntities });
+                }
+            }
+        },
+        update: {
+            properties: ['name', 'email', 'address', 'city', 'country', 'postal_code', 'deliveryOption', 'paymentMethod', 'cart_uuid'],
+            middleware: [],
+            hooks: {
+                after: async (req, res, params, entity) => {
+                    const orderEntities = await CartProductEntity.findAll({ 
+                        where: { cart_uuid: entity.cart_uuid },
+                        include: ProductEntity 
+                    });
+                    
+                    // Let billing know that the product order is updated
+                    sendMessage('billing_product_order_update', { entity, orderEntities });
+                }
+            }
+        },
+        delete: {
+            middleware: [],
+            hooks: {
+                after: async (req, res, params, entity) => {
+                    const orderEntities = await CartProductEntity.findAll({ 
+                        where: { cart_uuid: entity.cart_uuid },
+                        include: ProductEntity 
+                    });
+                    
+                    // Let billing know that the product order is updated
+                    sendMessage('billing_product_order_discard', { entity, orderEntities });
+                }
+            }
+        },
+        debug
+    }),
+
+    ProductOrderEntityController: RestController(`${prefix}product_order_entities`, 'uuid', ProductOrderEntity, {
+        find: {
+            middleware: [],
+            includes: ['ProductOrder', 'ProductEntity'],
+        },
+        findAll: {
+            middleware: [],
+            findProperties: ['uuid'],
+            whereProperties: ['uuid'],
+            includes: ['ProductOrder', 'ProductEntity'],
+        },
+        create: {
+            properties: ['product_order_uuid', 'product_entity_uuid'],
+            middleware: [],
+        },
+        update: {
+            properties: ['product_order_uuid', 'product_entity_uuid'],
+            middleware: [],
+        },
+        delete: {
+            middleware: [],
+        },
+        debug
+    }),
+
+    ProductOrderStateController: RestController(`${prefix}product_order_states`, 'name', ProductOrderState, {
+        find: {
+            middleware: [],
+            includes: ['ProductOrder'],
+        },
+        findAll: {
+            middleware: [],
+            findProperties: ['name'],
+            whereProperties: ['name'],
+            includes: ['ProductOrder'],
         },
         debug
     }),

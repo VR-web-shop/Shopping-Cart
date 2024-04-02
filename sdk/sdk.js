@@ -480,6 +480,15 @@
             "CartProductEntityController": "{\"serverURL\":\"http://http://localhost:3004\",\"endpoint\":\"/api/v1/cart_product_entities\",\"foreignKeyName\":\"uuid\",\"options\":{\"authorization\":{\"storage\":\"localStorage\",\"key\":\"auth\"},\"findAll\":{\"auth\":true},\"create\":{\"auth\":true,\"properties\":[\"cart_uuid\",\"product_entity_uuid\",\"access_token\"]},\"update\":{\"auth\":true,\"properties\":[\"access_token\"]}}}"
         },
         {
+            "ProductOrderController": "{\"serverURL\":\"http://http://localhost:3004\",\"endpoint\":\"/api/v1/product_orders\",\"foreignKeyName\":\"uuid\",\"options\":{\"authorization\":{\"storage\":\"localStorage\",\"key\":\"auth\"},\"find\":{\"auth\":false},\"findAll\":{\"auth\":false},\"create\":{\"auth\":false,\"properties\":[\"name\",\"email\",\"address\",\"city\",\"country\",\"postal_code\",\"deliveryOption\",\"paymentMethod\",\"cart_uuid\"]},\"update\":{\"auth\":false,\"properties\":[\"name\",\"email\",\"address\",\"city\",\"country\",\"postal_code\",\"deliveryOption\",\"paymentMethod\",\"cart_uuid\"]},\"delete\":{\"auth\":false}}}"
+        },
+        {
+            "ProductOrderEntityController": "{\"serverURL\":\"http://http://localhost:3004\",\"endpoint\":\"/api/v1/product_order_entities\",\"foreignKeyName\":\"uuid\",\"options\":{\"authorization\":{\"storage\":\"localStorage\",\"key\":\"auth\"},\"find\":{\"auth\":false},\"findAll\":{\"auth\":false},\"create\":{\"auth\":false,\"properties\":[\"product_order_uuid\",\"product_entity_uuid\"]},\"update\":{\"auth\":false,\"properties\":[\"product_order_uuid\",\"product_entity_uuid\"]},\"delete\":{\"auth\":false}}}"
+        },
+        {
+            "ProductOrderStateController": "{\"serverURL\":\"http://http://localhost:3004\",\"endpoint\":\"/api/v1/product_order_states\",\"foreignKeyName\":\"name\",\"options\":{\"authorization\":{\"storage\":\"localStorage\",\"key\":\"auth\"},\"find\":{\"auth\":false},\"findAll\":{\"auth\":false}}}"
+        },
+        {
             "ProductEntityController": "{\"serverURL\":\"http://http://localhost:3004\",\"endpoint\":\"/api/v1/product_entities\",\"foreignKeyName\":\"uuid\",\"options\":{\"authorization\":{\"storage\":\"localStorage\",\"key\":\"auth\"},\"find\":{\"auth\":false},\"findAll\":{\"auth\":false},\"create\":{\"auth\":false,\"properties\":[\"uuid\",\"product_entity_state_name\"]},\"update\":{\"auth\":false,\"properties\":[\"product_entity_state_name\"]},\"delete\":{\"auth\":false}}}"
         },
         {
