@@ -38,6 +38,7 @@ const AuthorizeJWTCart = function(req, res, next) {
     
     try {
         const decoded = Jwt.verify(token, process.env.JWT_CART_ACCESS_SECRET);
+        req.cart = decoded;
         const { sub } = decoded;
         if (sub !== uuid) {
             return res.status(401).send({ message: 'Unauthorized' });

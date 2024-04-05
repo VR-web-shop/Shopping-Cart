@@ -1,6 +1,7 @@
 import meteor from "@vr-web-shop/meteor";
 import CartJWT from "../../../jwt/CartJWT.js";
 import MiddlewareJWT from "../../../jwt/MiddlewareJWT.js";
+import BrokerServiceProducer from "../../../services/BrokerServiceProducer.js";
 
 import Cart from "../../../models/Cart.js";
 import CartState, { CART_STATES } from "../../../models/CartState.js";
@@ -12,8 +13,6 @@ import ProductOrderEntity from "../../../models/ProductOrderEntity.js";
 import ProductOrderState, { PRODUCT_ORDER_STATES } from "../../../models/ProductOrderState.js";
 import DeliverOption, { DELIVER_OPTIONS } from "../../../models/DeliverOption.js";
 import PaymentOption, { PAYMENT_OPTIONS } from "../../../models/PaymentOption.js";
-
-import { sendMessage } from "../../../config/BrokerConfig.js";
 
 const prefix = '/api/v1/';
 const RestController = meteor.RestController;
@@ -63,9 +62,7 @@ export default {
                     const openProductOrders = await ProductOrder.findAll({ where: { cart_uuid: cart.uuid, product_order_state_name: PRODUCT_ORDER_STATES.WAITING_FOR_PAYMENT } });
                     for (const openProductOrder of openProductOrders) {
                         await openProductOrder.update({ product_order_state_name: PRODUCT_ORDER_STATES.CANCELLED_BY_CUSTOMER });
-                        
-                        const productOrderEntities = await ProductOrderEntity.findAll({ where: { product_order_uuid: openProductOrder.uuid } });
-                        sendMessage('products_update_product_order', { productOrder: openProductOrder, productOrderEntities });
+                        await BrokerServiceProducer.updateProductOrder(openProductOrder);
                     }
                 }
 
@@ -108,31 +105,33 @@ export default {
          */
         create: {
             properties: ['cart_uuid', 'product_entity_uuid', 'access_token'],
-            middleware: [
-                CartJWT.AuthorizeJWTCart,
-                async (req, res, next) => {
-                    // Check if the product entity is already in the cart
-                    // If it is, return an error
-                    const cartProductEntities = await CartProductEntity.findAll({
-                        where: {
-                            cart_uuid: req.body.cart_uuid,
-                            product_entity_uuid: req.body.product_entity_uuid
-                        }
-                    });
+            middleware: [CartJWT.AuthorizeJWTCart],
+            customMethod: async (req, res, params) => {
+                console.log(params);
+                const cart_uuid = params.body.cart_uuid;
+                const product_entity_uuid = params.body.product_entity_uuid;
+                
+                const cartProductEntity = await CartProductEntity.findOne({ where: { 
+                    cart_uuid, 
+                    product_entity_uuid
+                }});
 
-                    if (cartProductEntities.length > 0) {
-                        return res.status(400).send('Product entity already in a cart');                        
-                    }
-
-                    next();
+                if (cartProductEntity) {
+                    return cartProductEntity.dataValues;
                 }
-            ],
+
+                const result = CartProductEntity.create({
+                    cart_uuid, 
+                    product_entity_uuid
+                });
+
+                return result; 
+            },
             customResponse: async (cartProductEntity) => {
                 // Let everyone know that the product entity is reserved by the customer
                 const productEntity = await ProductEntity.findOne({ where: { uuid: cartProductEntity.product_entity_uuid } });
                 const result = await productEntity.update({ product_entity_state_name: PRODUCT_ENTITY_STATES.RESERVERED_BY_CUSTOMER_CART })
-                sendMessage('scenes_update_product_entity', result);
-                sendMessage('products_update_product_entity', result);
+                await BrokerServiceProducer.updateProductEntity(result);
 
                 return cartProductEntity;
             }
@@ -148,8 +147,7 @@ export default {
                 // Let everyone know that the product entity is released by the customer
                 const productEntity = await ProductEntity.findOne({ where: { uuid: cartProductEntity.product_entity_uuid } });
                 const result = await productEntity.update({ product_entity_state_name: PRODUCT_ENTITY_STATES.AVAILABLE_FOR_PURCHASE })
-                sendMessage('scenes_update_product_entity', result);
-                sendMessage('products_update_product_entity', result);
+                await BrokerServiceProducer.updateProductEntity(result);
 
                 // This should properly be a delete request, but the SDK generator,
                 // does not support parameters in the delete request besides the foreign key,
@@ -182,9 +180,7 @@ export default {
             middleware: [],
             hooks: {
                 after: async (req, res, params, entity) => {
-                    // Let everyone know that the product order is created
-                    const productOrderEntities = await ProductOrderEntity.findAll({ where: { product_order_uuid: entity.uuid } });
-                    sendMessage('products_new_product_order', { productOrder: entity, productOrderEntities });
+                    await BrokerServiceProducer.newProductOrder(entity);
                 }
             }
         },
@@ -206,8 +202,7 @@ export default {
                         const productEntities = await ProductEntity.findAll({ where: { uuid: cartProductEntities.map(cpe => cpe.product_entity_uuid) } });
                         for (const productEntity of productEntities) {
                             const result = await productEntity.update({ product_entity_state_name: PRODUCT_ENTITY_STATES.RESERVERED_BY_CUSTOMER_ORDER })
-                            sendMessage('scenes_update_product_entity', result);
-                            sendMessage('products_update_product_entity', result);
+                            await BrokerServiceProducer.updateProductEntity(result);
                         }
 
                         // Change the cart state to OPEN_FOR_PRODUCT_ENTITIES
@@ -217,9 +212,7 @@ export default {
                         await CartProductEntity.destroy({ where: { cart_uuid: entity.cart_uuid } });
                     }
 
-                    // Let everyone know that the product order is updated
-                    const productOrderEntities = await ProductOrderEntity.findAll({ where: { product_order_uuid: entity.uuid } });
-                    sendMessage('products_update_product_order', { productOrder: entity, productOrderEntities });
+                    await BrokerServiceProducer.updateProductOrder(entity);
                 }
             }
         },

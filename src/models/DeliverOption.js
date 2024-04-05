@@ -17,6 +17,7 @@ const DeliverOption = Database.define("DeliverOption", {
         allowNull: false
     },
 }, {
+    paranoid: true,
     underscored: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',

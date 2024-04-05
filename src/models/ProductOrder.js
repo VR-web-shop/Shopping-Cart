@@ -49,11 +49,14 @@ const ProductOrder = Database.define("ProductOrder", {
             const cart = await Cart.findOne({ where: { uuid: productOrder.dataValues.cart_uuid }, include: [
                 { model: ProductEntity, as: 'ProductEntity' }            
             ]});
+            
             for (const productEntity of cart.ProductEntity) {
-                await ProductOrderEntity.create({
+                // delete any existing product order entity with the same product entity uuid
+                await ProductOrderEntity.destroy({ where: { product_entity_uuid: productEntity.dataValues.uuid } });
+                await ProductOrderEntity.findOrCreate({ where: {
                     product_order_uuid: productOrder.dataValues.uuid,
                     product_entity_uuid: productEntity.dataValues.uuid
-                });
+                }});
             }
         },
         beforeUpdate: async (productOrder) => {
@@ -62,6 +65,12 @@ const ProductOrder = Database.define("ProductOrder", {
                 { model: ProductEntity, as: 'ProductEntity' }            
             ]});
             for (const productEntity of cart.ProductEntity) {
+                
+                await ProductOrderEntity.destroy({ where: { 
+                    product_entity_uuid: productEntity.dataValues.uuid,
+                    product_order_uuid: productOrder.dataValues.uuid
+                }});
+
                 await ProductOrderEntity.create({
                     product_order_uuid: productOrder.dataValues.uuid,
                     product_entity_uuid: productEntity.dataValues.uuid

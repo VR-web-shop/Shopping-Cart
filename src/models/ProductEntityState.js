@@ -8,7 +8,6 @@ export const PRODUCT_ENTITY_STATES = {
     SHIPPED_TO_CUSTOMER: 'SHIPPED_TO_CUSTOMER',
     DELIVERED_TO_CUSTOMER: 'DELIVERED_TO_CUSTOMER',
     RETURNED_BY_CUSTOMER: 'RETURNED_BY_CUSTOMER',
-    DISCARDED_BY_EMPLOYEE: 'DISCARDED_BY_EMPLOYEE',
 }
 
 const ProductEntityState = Database.define("ProductEntityState", {
@@ -17,6 +16,7 @@ const ProductEntityState = Database.define("ProductEntityState", {
         primaryKey: true
     },
 }, {
+    paranoid: true,
     underscored: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
