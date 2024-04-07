@@ -13,6 +13,8 @@ import ProductOrderEntity from './src/models/ProductOrderEntity.js';
 import DeliverOption, { DELIVER_OPTIONS } from './src/models/DeliverOption.js';
 import PaymentOption, { PAYMENT_OPTIONS } from './src/models/PaymentOption.js';
 
+import demoProducts from './demo_products.json' assert { type: "json" };
+
 (async () => {
     await database.sync({ force: true });
 
@@ -35,4 +37,11 @@ import PaymentOption, { PAYMENT_OPTIONS } from './src/models/PaymentOption.js';
     for (const paymentOption of Object.values(PAYMENT_OPTIONS)) {
         await PaymentOption.findOrCreate({ where: paymentOption });
     }
+
+    const CDNUrl = process.env.S3_CDN_URL
+    const { products } = demoProducts;
+    products.forEach(async product => {
+        product.thumbnail_source = CDNUrl + "/" + product.thumbnail_source;
+        await Product.create(product);
+    });
 })();
