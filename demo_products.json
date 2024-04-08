@@ -8,6 +8,13 @@
             "thumbnail_source": "static/thumbnails/HeadsetF5.png"
         },
         {
+            "uuid": "f5b1b1b1-1b1b-1b2b-2b2b-1b1b1b1b1b1b",
+            "name": "Headset F10",
+            "description": "A headset with a microphone",
+            "price": 100,
+            "thumbnail_source": "static/thumbnails/HeadsetF10.png"
+        },
+        {
             "uuid": "r1b1b1b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b",
             "name": "Headset R1",
             "description": "A headset with a microphone",
