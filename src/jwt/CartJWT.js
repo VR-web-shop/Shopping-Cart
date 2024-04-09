@@ -29,6 +29,7 @@ const AuthorizeJWTCart = function(req, res, next) {
     let { uuid } = req.params;
     let { access_token: token } = req.query;
     // or is it in the body?
+    if (!uuid) uuid = req.query.cart_uuid;
     if (!uuid) uuid = req.body.cart_uuid || req.body.uuid;
     if (!token) token = req.body.access_token;
 

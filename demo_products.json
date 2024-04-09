@@ -22,13 +22,6 @@
             "thumbnail_source": "static/thumbnails/HeadsetR1.png"
         },
         {
-            "uuid": "x2b1b1b1-1b1b-1b1b-2b1b-1b1b1b1b1b1b",
-            "name": "Headset X2",
-            "description": "A headset with a microphone",
-            "price": 100,
-            "thumbnail_source": "static/thumbnails/HeadsetX2.png"
-        },
-        {
             "uuid": "z1b1b1b1-1b1b-1b1b-2b1b-1b1b1b1b1b1b",
             "name": "Headset Z1",
             "description": "A headset with a microphone",
@@ -183,6 +176,27 @@
             "thumbnail_source": "static/thumbnails/OfficeChair.png"
         },
         {
+            "uuid": "z9b6b1b1-1b1b-1b1b-1b1b-1b1b1b1b1b3b",
+            "name": "Office chair 2",
+            "description": "A simple office chair",
+            "price": 100,
+            "thumbnail_source": "static/thumbnails/OfficeChair2.png"
+        },
+        {
+            "uuid": "z9b6b1b1-1b1b-1b1b-1b1b-1b1b1b1b1b4b",
+            "name": "Office chair 3",
+            "description": "A simple office chair",
+            "price": 100,
+            "thumbnail_source": "static/thumbnails/OfficeChair3.png"
+        },
+        {
+            "uuid": "z9b6b1b1-1b1b-1b1b-1b1b-1b1b1b1b1b5b",
+            "name": "Office chair RGB",
+            "description": "A simple office chair",
+            "price": 100,
+            "thumbnail_source": "static/thumbnails/OfficeChairRGB.png"
+        },
+        {
             "uuid": "z9b7b1b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b",
             "name": "PC 1",
             "description": "A simple PC",
@@ -222,7 +236,7 @@
             "name": "USB 64GB",
             "description": "A simple USB stick",
             "price": 100,
-            "thumbnail_source": "static/thumbnails/USB1-64GB.png"
+            "thumbnail_source": "static/thumbnails/USB1-64gb.png"
         },
         {
             "uuid": "z9b9b5b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b",
@@ -236,7 +250,7 @@
             "name": "USB 256GB",
             "description": "A simple USB stick",
             "price": 100,
-            "thumbnail_source": "static/thumbnails/USB1-256GB.png"
+            "thumbnail_source": "static/thumbnails/USB1-256gb.png"
         }
     ]
 }
