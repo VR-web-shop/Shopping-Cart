@@ -46,7 +46,7 @@ const AuthorizePermissionJWT = function(permissionName) {
         let hasPermission = false;
         
         for (const permission of permissions) {
-            if (permission.name === permissionName) {
+            if (permission === permissionName) {
                 hasPermission = true;
                 break;
             }
