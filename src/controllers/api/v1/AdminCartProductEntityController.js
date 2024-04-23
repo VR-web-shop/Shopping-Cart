@@ -1,28 +1,27 @@
 import APIActorError from "../errors/APIActorError.js";
-import ReadOneQuery from "../../../queries/ProductOrder/ReadOneQuery.js";
-import ReadCollectionQuery from "../../../queries/ProductOrder/ReadCollectionQuery.js";
-import PutCommand from "../../../commands/ProductOrder/PutCommand.js";
-import DeleteCommand from "../../../commands/ProductOrder/DeleteCommand.js";
+import ReadOneQuery from "../../../queries/CartProductEntity/ReadOneQuery.js";
+import ReadCollectionQuery from "../../../queries/CartProductEntity/ReadCollectionQuery.js";
+import PutCommand from "../../../commands/CartProductEntity/PutCommand.js";
+import DeleteCommand from "../../../commands/CartProductEntity/DeleteCommand.js";
 import ModelCommandService from "../../../services/ModelCommandService.js";
 import ModelQueryService from "../../../services/ModelQueryService.js";
-import CartJWT from "../../../jwt/CartJWT.js";
+import Middleware from "../../../jwt/MiddlewareJWT.js";
 import express from 'express';
-import { Op } from "sequelize";
 
 const router = express.Router()
 const commandService = new ModelCommandService()
 const queryService = new ModelQueryService()
 
-router.use(CartJWT.AuthorizeJWTCart)
+router.use(Middleware.AuthorizeJWT)
 
-router.route('/api/v1/product_order/:client_side_uuid')
+router.route('/api/v1/admin/cart_product_entity/:client_side_uuid')
     /**
      * @openapi
-     * '/api/v1/product_order/{client_side_uuid}':
+     * '/api/v1/admin/cart_product_entity/{client_side_uuid}':
      *  get:
      *     tags:
-     *       - Product Order Controller
-     *     summary: Fetch a product order by UUID
+     *       - Cart Product Entity Controller
+     *     summary: Fetch a cart product entity by UUID
      *     security:
      *      - bearerAuth: []
      *     parameters:
@@ -41,23 +40,9 @@ router.route('/api/v1/product_order/:client_side_uuid')
      *             properties:
      *               client_side_uuid:
      *                 type: string
-     *               name:
+     *               cart_client_side_uuid:
      *                 type: string
-     *               email:
-     *                 type: string
-     *               address:
-     *                 type: string
-     *               city:
-     *                 type: string
-     *               country:
-     *                 type: string
-     *               postal_code: 
-     *                 type: string
-     *               product_order_state_name:
-     *                 type: string
-     *               deliver_option_client_side_uuid: 
-     *                 type: string
-     *               payment_option_client_side_uuid:
+     *               product_entity_client_side_uuid:
      *                 type: string
      *      400:
      *        description: Bad Request
@@ -68,7 +53,7 @@ router.route('/api/v1/product_order/:client_side_uuid')
      *      500:
      *        description: Internal Server Error
      */
-    .get(async (req, res) => {
+    .get(AuthorizeJWT.AuthorizePermissionJWT("cart-product-entities:show"), async (req, res) => {
         try {
             const { client_side_uuid } = req.params
             const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
@@ -83,14 +68,14 @@ router.route('/api/v1/product_order/:client_side_uuid')
         }
     })
 
-router.route('/api/v1/product_orders')
+router.route('/api/v1/admin/cart_product_entities')
     /**
     * @openapi
-    * '/api/v1/product_orders':
+    * '/api/v1/admin/cart_product_entities':
     *  get:
     *     tags:
-    *       - Product Order Controller
-    *     summary: Fetch all product orders
+    *       - Cart Product Entity Controller
+    *     summary: Fetch all cart product entities
     *     security:
     *      - bearerAuth: []
     *     parameters:
@@ -121,23 +106,9 @@ router.route('/api/v1/product_orders')
     *                properties:
     *                 client_side_uuid:
     *                  type: string
-    *                 name:
+    *                 cart_client_side_uuid:
     *                  type: string
-    *                 email:
-    *                  type: string
-    *                 address:
-    *                  type: string
-    *                 city:
-    *                  type: string
-    *                 country:
-    *                  type: string
-    *                 postal_code:
-    *                  type: string
-    *                 product_order_state_name:
-    *                  type: string
-    *                 deliver_option_client_side_uuid:
-    *                  type: string
-    *                 payment_option_client_side_uuid:
+    *                 product_entity_client_side_uuid:
     *                  type: string
     *      400:
     *        description: Bad Request
@@ -148,21 +119,10 @@ router.route('/api/v1/product_orders')
     *      500:
     *        description: Internal Server Error
     */
-    .get(async (req, res) => {
+    .get(Middleware.AuthorizePermissionJWT("cart-product-entities:index"), async (req, res) => {
         try {
-            const { sub } = req.cart
             const { limit, page } = req.query
-            const { rows, count, pages } = await queryService.invoke(new ReadCollectionQuery({
-                limit, 
-                page,
-                where: [{
-                    table: 'cart',
-                    column: 'client_side_uuid',
-                    operator: Op.eq,
-                    key: 'cartClientSideUuid',
-                    value: sub,
-                }]
-            }))
+            const { rows, count, pages } = await queryService.invoke(new ReadCollectionQuery({limit, page}))
             res.send({ rows, count, pages })
         } catch (error) {
             console.error(error)
@@ -171,11 +131,11 @@ router.route('/api/v1/product_orders')
     })
     /**
     * @openapi
-    * '/api/v1/product_orders':
+    * '/api/v1/admin/cart_product_entities':
     *  post:
     *     tags:
-    *       - Product Order Controller
-    *     summary: Create a new product order
+    *       - Cart Product Entity Controller
+    *     summary: Create a new cart product entity
     *     security:
     *      - bearerAuth: []
     *     requestBody:
@@ -186,40 +146,18 @@ router.route('/api/v1/product_orders')
     *         type: object
     *         required:
     *          - client_side_uuid
-    *          - name
-    *          - email
-    *          - address
-    *          - city
-    *          - country
-    *          - postal_code
-    *          - deliver_option_client_side_uuid
-    *          - payment_option_client_side_uuid
+    *          - cart_client_side_uuid
+    *          - product_entity_client_side_uuid
     *         properties:
     *          client_side_uuid:
     *           type: string
     *           default: 123e4567-e89b-12d3-a456-426614174000
-    *          name:
+    *          cart_client_side_uuid:
     *           type: string
-    *           default: John Doe
-    *          email:
+    *           default: 123e4567-e89b-12d3-a456-426614174000
+    *          product_entity_client_side_uuid:
     *           type: string
-    *           default: test@test.dk
-    *          address:
-    *           type: string
-    *           default: Test Address
-    *          city:
-    *           type: string
-    *           default: Test City
-    *          country:
-    *           type: string
-    *           default: Test Country
-    *          postal_code:
-    *           type: string
-    *           default: 1234
-    *          deliver_option_client_side_uuid:
-    *           type: string
-    *          payment_option_client_side_uuid:
-    *           type: string
+    *           default: 123e4567-e89b-12d3-a456-426614174000
     *     responses:
     *      200:
     *        description: OK
@@ -230,24 +168,10 @@ router.route('/api/v1/product_orders')
     *             properties:
     *               client_side_uuid:
     *                 type: string
-    *               name:
-    *                type: string
-    *               email:
-    *                type: string
-    *               address:
-    *                type: string
-    *               city:
-    *                type: string
-    *               country:
-    *                type: string
-    *               postal_code:
-    *                type: string
-    *               product_order_state_name:
-    *                type: string
-    *               deliver_option_client_side_uuid:
-    *                type: string
-    *               payment_option_client_side_uuid:
-    *                type: string
+    *               cart_client_side_uuid:
+    *                 type: string
+    *               product_entity_client_side_uuid:
+    *                 type: string
     *      400:
     *        description: Bad Request
     *      404:
@@ -257,11 +181,10 @@ router.route('/api/v1/product_orders')
     *      500:
     *        description: Internal Server Error
     */
-    .post(async (req, res) => {
+    .post(Middleware.AuthorizePermissionJWT("cart-product-entities:put"), async (req, res) => {
         try {
-            const product_order_state_name = 'WAITING_FOR_PAYMENT'
-            const { client_side_uuid, name, email, address, city, country, postal_code, deliver_option_client_side_uuid, payment_option_client_side_uuid } = req.body
-            await commandService.invoke(new CreateCommand(client_side_uuid, { name, email, address, city, country, postal_code, product_order_state_name, deliver_option_client_side_uuid, payment_option_client_side_uuid }))
+            const { client_side_uuid, cart_client_side_uuid, product_entity_client_side_uuid } = req.body
+            await commandService.invoke(new PutCommand(client_side_uuid, { cart_client_side_uuid, product_entity_client_side_uuid }))
             const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
             res.send(response)
         } catch (error) {
@@ -275,11 +198,11 @@ router.route('/api/v1/product_orders')
     })
     /**
     * @openapi
-    * '/api/v1/product_orders':
+    * '/api/v1/admin/cart_product_entities':
     *  put:
     *     tags:
-    *       - Product Order Controller
-    *     summary: Update a product order
+    *       - Cart Product Entity Controller
+    *     summary: Update a cart product entity
     *     security:
     *      - bearerAuth: []
     *     requestBody:
@@ -290,40 +213,18 @@ router.route('/api/v1/product_orders')
     *         type: object
     *         required:
     *          - client_side_uuid
-    *          - name
-    *          - email
-    *          - address
-    *          - city
-    *          - country
-    *          - postal_code
-    *          - deliver_option_client_side_uuid
-    *          - payment_option_client_side_uuid
+    *          - cart_client_side_uuid
+    *          - product_entity_client_side_uuid
     *         properties:
     *          client_side_uuid:
     *           type: string
     *           default: 123e4567-e89b-12d3-a456-426614174000
-    *          name:
+    *          cart_client_side_uuid:
     *           type: string
-    *           default: John Doe
-    *          email:
+    *           default: 123e4567-e89b-12d3-a456-426614174000
+    *          product_entity_client_side_uuid:
     *           type: string
-    *           default: test@test.dk
-    *          address:
-    *           type: string
-    *           default: Test Address
-    *          city:
-    *           type: string
-    *           default: Test City
-    *          country:
-    *           type: string
-    *           default: Test Country
-    *          postal_code:
-    *           type: string
-    *           default: 1234
-    *          deliver_option_client_side_uuid:
-    *           type: string
-    *          payment_option_client_side_uuid:
-    *           type: string
+    *           default: 123e4567-e89b-12d3-a456-426614174000
     *     responses:
     *      200:
     *        description: OK
@@ -333,25 +234,11 @@ router.route('/api/v1/product_orders')
     *             type: object
     *             properties:
     *               client_side_uuid:
-    *                 type: string 
-    *               name:
-    *                type: string
-    *               email:
-    *                type: string
-    *               address:
-    *                type: string
-    *               city:
-    *                type: string
-    *               country:
-    *                type: string
-    *               postal_code:
-    *                type: string
-    *               product_order_state_name:
-    *                type: string
-    *               deliver_option_client_side_uuid:
-    *                type: string
-    *               payment_option_client_side_uuid:
-    *                type: string
+    *                 type: string
+    *               cart_client_side_uuid:
+    *                 type: string
+    *               product_entity_client_side_uuid:
+    *                 type: string
     *      400:
     *        description: Bad Request
     *      404:
@@ -361,12 +248,10 @@ router.route('/api/v1/product_orders')
     *      500:
     *        description: Internal Server Error
     */
-    .put(async (req, res) => {
+    .put(Middleware.AuthorizePermissionJWT("cart-product-entities:put"), async (req, res) => {
         try {
-            const entity = await queryService.invoke(new ReadOneQuery(client_side_uuid))
-            const product_order_state_name = entity.product_order_state_name
-            const { client_side_uuid, name, email, address, city, country, postal_code, deliver_option_client_side_uuid, payment_option_client_side_uuid } = req.body
-            await commandService.invoke(new PutCommand(client_side_uuid, { name, email, address, city, country, postal_code, deliver_option_client_side_uuid, payment_option_client_side_uuid, product_order_state_name }))
+            const { client_side_uuid, cart_client_side_uuid, product_entity_client_side_uuid } = req.body
+            await commandService.invoke(new PutCommand(client_side_uuid, { cart_client_side_uuid, product_entity_client_side_uuid }))
             const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
             res.send(response)
         } catch (error) {
@@ -380,11 +265,11 @@ router.route('/api/v1/product_orders')
     })
     /**
     * @openapi
-    * '/api/v1/product_orders':
+    * '/api/v1/admin/cart_product_entities':
     *  delete:
     *     tags:
-    *       - Product Order Controller
-    *     summary: Delete a product order
+    *       - Cart Product Entity Controller
+    *     summary: Delete a cart product entity
     *     security:
     *      - bearerAuth: []
     *     requestBody:
@@ -410,7 +295,7 @@ router.route('/api/v1/product_orders')
     *      500:
     *        description: Internal Server Error
     */
-    .delete(async (req, res) => {
+    .delete(Middleware.AuthorizePermissionJWT("cart-product-entities:delete"), async (req, res) => {
         try {
             const { client_side_uuid } = req.body
             await commandService.invoke(new DeleteCommand(client_side_uuid))

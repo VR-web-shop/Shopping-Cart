@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
       autoIncrement: true,
       allowNull: false
     },
-    deletedAt: {
+    deleted_at: {
       type: DataTypes.DATE,
       field: 'deleted_at',
     },

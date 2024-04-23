@@ -1,22 +1,25 @@
 import APIActorError from "../errors/APIActorError.js";
 import ReadOneQuery from "../../../queries/Cart/ReadOneQuery.js";
+import ReadCollectionQuery from "../../../queries/Cart/ReadCollectionQuery.js";
 import PutCommand from "../../../commands/Cart/PutCommand.js";
 import ModelCommandService from "../../../services/ModelCommandService.js";
 import ModelQueryService from "../../../services/ModelQueryService.js";
-import CartJWT from "../../../jwt/CartJWT.js";
+import Middleware from "../../../jwt/MiddlewareJWT.js";
 import express from 'express';
 
 const router = express.Router()
 const commandService = new ModelCommandService()
 const queryService = new ModelQueryService()
 
-router.route('/api/v1/cart/:client_side_uuid')
+router.use(Middleware.AuthorizeJWT)
+
+router.route('/api/v1/admin/cart/:client_side_uuid')
     /**
      * @openapi
-     * '/api/v1/cart/{client_side_uuid}':
+     * '/api/v1/admin/cart/{client_side_uuid}':
      *  get:
      *     tags:
-     *       - Cart Controller
+     *       - Admin Cart Controller
      *     summary: Fetch a cart by UUID
      *     security:
      *      - bearerAuth: []
@@ -47,7 +50,7 @@ router.route('/api/v1/cart/:client_side_uuid')
      *      500:
      *        description: Internal Server Error
      */
-    .get(CartJWT.AuthorizeJWTCart, async (req, res) => {
+    .get(AuthorizeJWT.AuthorizePermissionJWT("carts:show"), async (req, res) => {
         try {
             const { client_side_uuid } = req.params
             const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
@@ -61,13 +64,72 @@ router.route('/api/v1/cart/:client_side_uuid')
             return res.status(500).send({ message: 'Internal Server Error' })
         }
     })
-router.route('/api/v1/carts')
+
+router.route('/api/v1/admin/carts')
     /**
     * @openapi
-    * '/api/v1/carts':
+    * '/api/v1/admin/carts':
+    *  get:
+    *     tags:
+    *       - Admin Cart Controller
+    *     summary: Fetch all carts
+    *     security:
+    *      - bearerAuth: []
+    *     parameters:
+    *     - in: query
+    *       name: page
+    *       schema:
+    *        type: integer
+    *       description: The page number
+    *     - in: query
+    *       name: limit
+    *       schema:
+    *        type: integer
+    *       description: The number of items per page
+    *     responses:
+    *      200:
+    *        description: OK
+    *        content:
+    *         application/json:
+    *           schema:
+    *             type: object
+    *             properties:
+    *              pages:
+    *               type: integer
+    *              users:
+    *               type: array
+    *               items:
+    *                type: object
+    *                properties:
+    *                 client_side_uuid:
+    *                  type: string
+    *                 cart_state_name:
+    *                  type: string
+    *      400:
+    *        description: Bad Request
+    *      404:
+    *        description: Not Found
+    *      401:
+    *        description: Unauthorized
+    *      500:
+    *        description: Internal Server Error
+    */
+    .get(AuthorizeJWT.AuthorizePermissionJWT("carts:index"), async (req, res) => {
+        try {
+            const { limit, page } = req.query
+            const { rows, count, pages } = await queryService.invoke(new ReadCollectionQuery({limit, page}))
+            res.send({ rows, count, pages })
+        } catch (error) {
+            console.error(error)
+            return res.status(500).send({ message: 'Internal Server Error' })
+        }
+    })
+    /**
+    * @openapi
+    * '/api/v1/admin/carts':
     *  post:
     *     tags:
-    *       - Cart Controller
+    *       - Admin Cart Controller
     *     summary: Create a new cart
     *     security:
     *      - bearerAuth: []
@@ -108,7 +170,7 @@ router.route('/api/v1/carts')
     *      500:
     *        description: Internal Server Error
     */
-    .post(async (req, res) => {
+    .post(AuthorizeJWT.AuthorizePermissionJWT("carts:put"), async (req, res) => {
         try {
             const { client_side_uuid, cart_state_name } = req.body
             await commandService.invoke(new PutCommand(client_side_uuid, { cart_state_name }))
@@ -125,10 +187,10 @@ router.route('/api/v1/carts')
     })
     /**
     * @openapi
-    * '/api/v1/carts':
+    * '/api/v1/admin/carts':
     *  put:
     *     tags:
-    *       - Cart Controller
+    *       - Admin Cart Controller
     *     summary: Update a cart
     *     security:
     *      - bearerAuth: []
@@ -169,7 +231,7 @@ router.route('/api/v1/carts')
     *      500:
     *        description: Internal Server Error
     */
-    .put(CartJWT.AuthorizeJWTCart, async (req, res) => {
+    .put(AuthorizeJWT.AuthorizePermissionJWT("carts:put"), async (req, res) => {
         try {
             const { client_side_uuid, cart_state_name } = req.body
             await commandService.invoke(new PutCommand(client_side_uuid, { cart_state_name }))
