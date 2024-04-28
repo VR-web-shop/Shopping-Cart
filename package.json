@@ -10,7 +10,6 @@
   "scripts": {
     "test": "vitest",
     "start": "nodemon index.js",
-    "bundle_api": "node meteor.config.mjs",
     "bundle_sdk": "rollup --config rollup.config.mjs",
     "deploy_sdk": "bash sdk_deploy.sh",
     "migrate": "sequelize-cli db:migrate",
@@ -48,6 +47,7 @@
     "mysql2": "^3.9.4",
     "sequelize": "^6.37.1",
     "sqlite3": "^5.1.7",
+    "uuid": "^9.0.1",
     "vitest": "^1.5.0"
   }
 }

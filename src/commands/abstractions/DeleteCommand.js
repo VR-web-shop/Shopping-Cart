@@ -62,6 +62,12 @@ export default class DeleteCommand extends ModelCommand {
                     throw new APIActorError("No entity found", 404);
                 }
 
+                if (options.beforeTransactions) {
+                    for (const transaction of options.beforeTransactions) {
+                        await transaction(t, entity);
+                    }
+                }
+
                 await db[tombstoneName].create(
                     { [fkName]: pk, ...time },
                     { transaction: t }

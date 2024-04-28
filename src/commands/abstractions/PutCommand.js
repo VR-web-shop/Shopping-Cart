@@ -72,7 +72,7 @@ export default class PutCommand extends ModelCommand {
             { 
                 model: db[snapshotName], 
                 limit: 1,
-                order: [["created_at", "DESC"]] 
+                order: [["id", "DESC"]] 
             },
         ];
 
@@ -80,31 +80,30 @@ export default class PutCommand extends ModelCommand {
             include.push({ 
                 model: db[tombstoneName], 
                 limit: 1,
-                order: [["created_at", "DESC"]] 
+                order: [["id", "DESC"]] 
             });
         }
 
         try {
-            await db.sequelize.transaction(async t => {
-                console.log("transaction started", include)
+            const transactions = async (transaction) => {
                 let entity = await db[modelName].findOne(
                     { 
                         where: { [pkName]: pk },
                         include
                     },
-                    { transaction: t }
+                    { transaction }
                 );
 
                 if (!entity) {
                     entity = await db[modelName].create(
                         { [pkName]: pk }, 
-                        { transaction: t }
+                        { transaction }
                     );
                 } else if (tombstoneName && entity[`${tombstoneName}s`].length > 0) {
                     // Undo remove
                     await db[tombstoneName].destroy(
                         { where: { [fkName]: pk } },
-                        { transaction: t }
+                        { transaction }
                     );
                 }
 
@@ -119,22 +118,28 @@ export default class PutCommand extends ModelCommand {
                 }
 
                 if (options.beforeTransactions) {
-                    for (const transaction of options.beforeTransactions) {
-                        await transaction(t, entity, params);
+                    for (const transactionMethod of options.beforeTransactions) {
+                        await transactionMethod(transaction, entity, params);
                     }
                 }
 
                 const snapshot = await db[snapshotName].create(
                     { [fkName]: pk, ...params, ...time }, 
-                    { transaction: t }
+                    { transaction }
                 );
 
                 if (options.afterTransactions) {
-                    for (const transaction of options.afterTransactions) {
-                        await transaction(t, entity, snapshot);
+                    for (const transactionMethod of options.afterTransactions) {
+                        await transactionMethod(transaction, entity, snapshot);
                     }
                 }
-            });
+            }
+
+            if (options.transaction) {
+                await transactions(options.transaction);
+            } else {
+                await db.sequelize.transaction(async t => await transactions(t));
+            }
         } catch (error) {
             console.log(error)
 

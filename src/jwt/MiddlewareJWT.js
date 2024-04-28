@@ -13,7 +13,7 @@ const AuthorizeJWT = function(req, res, next) {
     if (!header) {
         return res.status(401).send({ message: 'Unauthorized' });
     }
-    
+
     const token = header && header.split(' ')[1];
     if (!token) {
         return res.status(401).send({ message: 'No token provided' });
@@ -36,8 +36,8 @@ const AuthorizeJWT = function(req, res, next) {
  */
 const AuthorizePermissionJWT = function(permissionName) {
     return (req, res, next) => {
+        
         const user = req.user;
-
         if (!user) {
             return res.status(401).send({ message: 'Unauthorized' });
         }
@@ -51,7 +51,6 @@ const AuthorizePermissionJWT = function(permissionName) {
                 break;
             }
         }
-
         if (!hasPermission) {
             return res.status(403).send({ message: 'Forbidden' });
         }

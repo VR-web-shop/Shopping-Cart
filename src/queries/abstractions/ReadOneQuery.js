@@ -99,7 +99,7 @@ export default class ReadOneQuery extends ModelQuery {
         const selectOpt = { type: QueryTypes.SELECT, replacements }
 
         const entity = await db.sequelize.query(selectSQL, selectOpt);
-        console.log(entity);
+
         if (entity.length === 0) {
             throw new APIActorError("No Entity found", 404);
         }

@@ -89,11 +89,6 @@ router.route('/api/v1/cart_product_entities')
     *       schema:
     *        type: integer
     *       description: The number of items per page
-    *     - in: query
-     *      name: cart_client_side_uuid
-     *      required: true
-     *      schema:
-     *       type: string
     *     responses:
     *      200:
     *        description: OK

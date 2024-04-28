@@ -22,18 +22,14 @@ module.exports = {
       cart_client_side_uuid: {
         type: Sequelize.STRING,
         allowNull: false,
-        references: {
-          model: 'Carts',
-          key: 'client_side_uuid'
-        }
       },
       cart_state_name: {
         type: Sequelize.STRING,
         allowNull: false,
-        references: {
-          model: 'CartStates',
-          key: 'name'
-        }
+      },
+      product_order_client_side_uuid: {
+        type: Sequelize.STRING,
+        allowNull: true,
       },
     });
   },

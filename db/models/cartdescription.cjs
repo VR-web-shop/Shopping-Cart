@@ -18,6 +18,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'cart_state_name',
         targetKey: 'name'
       });
+      models.CartDescription.belongsTo(models.ProductOrder, {
+        foreignKey: 'product_order_client_side_uuid',
+        targetKey: 'client_side_uuid'
+      });
     }
   }
   CartDescription.init({
@@ -42,6 +46,10 @@ module.exports = (sequelize, DataTypes) => {
     cart_state_name: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    product_order_client_side_uuid: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
   }, {
     sequelize,

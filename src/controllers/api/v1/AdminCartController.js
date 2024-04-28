@@ -13,10 +13,10 @@ const queryService = new ModelQueryService()
 
 router.use(Middleware.AuthorizeJWT)
 
-router.route('/api/v1/admin/cart/:client_side_uuid')
+router.route('/api/v1/admin/carts/:client_side_uuid')
     /**
      * @openapi
-     * '/api/v1/admin/cart/{client_side_uuid}':
+     * '/api/v1/admin/carts/{client_side_uuid}':
      *  get:
      *     tags:
      *       - Admin Cart Controller
@@ -50,7 +50,7 @@ router.route('/api/v1/admin/cart/:client_side_uuid')
      *      500:
      *        description: Internal Server Error
      */
-    .get(AuthorizeJWT.AuthorizePermissionJWT("carts:show"), async (req, res) => {
+    .get(Middleware.AuthorizePermissionJWT("carts:show"), async (req, res) => {
         try {
             const { client_side_uuid } = req.params
             const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
@@ -114,7 +114,7 @@ router.route('/api/v1/admin/carts')
     *      500:
     *        description: Internal Server Error
     */
-    .get(AuthorizeJWT.AuthorizePermissionJWT("carts:index"), async (req, res) => {
+    .get(Middleware.AuthorizePermissionJWT("carts:index"), async (req, res) => {
         try {
             const { limit, page } = req.query
             const { rows, count, pages } = await queryService.invoke(new ReadCollectionQuery({limit, page}))
@@ -170,10 +170,10 @@ router.route('/api/v1/admin/carts')
     *      500:
     *        description: Internal Server Error
     */
-    .post(AuthorizeJWT.AuthorizePermissionJWT("carts:put"), async (req, res) => {
+    .post(Middleware.AuthorizePermissionJWT("carts:put"), async (req, res) => {
         try {
-            const { client_side_uuid, cart_state_name } = req.body
-            await commandService.invoke(new PutCommand(client_side_uuid, { cart_state_name }))
+            const { client_side_uuid, cart_state_name, product_order } = req.body
+            await commandService.invoke(new PutCommand(client_side_uuid, { cart_state_name }, product_order))
             const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
             res.send(response)
         } catch (error) {
@@ -231,10 +231,10 @@ router.route('/api/v1/admin/carts')
     *      500:
     *        description: Internal Server Error
     */
-    .put(AuthorizeJWT.AuthorizePermissionJWT("carts:put"), async (req, res) => {
+    .put(Middleware.AuthorizePermissionJWT("carts:put"), async (req, res) => {
         try {
-            const { client_side_uuid, cart_state_name } = req.body
-            await commandService.invoke(new PutCommand(client_side_uuid, { cart_state_name }))
+            const { client_side_uuid, cart_state_name, product_order } = req.body
+            await commandService.invoke(new PutCommand(client_side_uuid, { cart_state_name }, product_order))
             const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
             res.send(response)
         } catch (error) {

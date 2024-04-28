@@ -23,18 +23,10 @@ module.exports = {
       cartClientSideUUID: {
         type: Sequelize.STRING,
         field: 'cart_client_side_uuid',
-        references: {
-          model: 'Carts',
-          key: 'client_side_uuid'
-        },
       },
       productEntityClientSideUUID: {
         type: Sequelize.STRING,
         field: 'product_entity_client_side_uuid',
-        references: {
-          model: 'ProductEntities',
-          key: 'client_side_uuid'
-        },
       },
     });
   },

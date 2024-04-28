@@ -13,10 +13,10 @@ const queryService = new ModelQueryService()
 
 router.use(Middleware.AuthorizeJWT)
 
-router.route('/api/v1/admin/cart_state/:name')
+router.route('/api/v1/admin/cart_states/:name')
     /**
      * @openapi
-     * '/api/v1/admin/cart_state/{name}':
+     * '/api/v1/admin/cart_states/{name}':
      *  get:
      *     tags:
      *       - Cart State Controller
@@ -48,7 +48,7 @@ router.route('/api/v1/admin/cart_state/:name')
      *      500:
      *        description: Internal Server Error
      */
-    .get(AuthorizeJWT.AuthorizePermissionJWT("cart-states:show"), async (req, res) => {
+    .get(Middleware.AuthorizePermissionJWT("cart-states:show"), async (req, res) => {
         try {
             const { name } = req.params
             const response = await queryService.invoke(new ReadOneQuery(name))
@@ -159,7 +159,7 @@ router.route('/api/v1/admin/cart_states')
     *      500:
     *        description: Internal Server Error
     */
-    .post(Middleware.AuthorizePermissionJWT("cart-states:create"), async (req, res) => {
+    .post(Middleware.AuthorizePermissionJWT("cart-states:put"), async (req, res) => {
         try {
             const { name } = req.body
             await commandService.invoke(new CreateCommand(name))

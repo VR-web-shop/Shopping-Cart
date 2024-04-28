@@ -55,8 +55,8 @@ export default class ModelQuery {
 
             ${
                 sTable
-                ? ` WHERE ${sTable} . created_at = (
-                        SELECT MAX(created_at) FROM ${sTable} 
+                ? ` WHERE ${sTable} . id = (
+                        SELECT MAX(id) FROM ${sTable} 
                         WHERE ${sTable} . ${fkName} = ${mTable} . ${pkName}
                     )`
                 : ""

@@ -3,7 +3,7 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('Products', {
-      clientSideUUID: {
+      client_side_uuid: {
         type: Sequelize.STRING,
         field: 'client_side_uuid',
         primaryKey: true

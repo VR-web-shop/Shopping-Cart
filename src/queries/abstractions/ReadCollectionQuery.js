@@ -1,5 +1,6 @@
 import ModelQuery from "./ModelQuery.js";
 import { Op, QueryTypes } from "sequelize";
+import APIActorError from "../../controllers/api/errors/APIActorError.js";
 
 export default class ReadCollectionQuery extends ModelQuery {
     constructor(

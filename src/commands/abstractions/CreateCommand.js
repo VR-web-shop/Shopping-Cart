@@ -45,7 +45,7 @@ export default class CreateCommand extends ModelCommand {
         this.snapshotParams = snapshotParams;
     }
 
-    async execute(db) {
+    async execute(db, options = {}) {
         if (!db || typeof db !== "object") {
             throw new Error("db is required and must be an object");
         }
@@ -63,26 +63,39 @@ export default class CreateCommand extends ModelCommand {
         }
 
         try {
-            await db.sequelize.transaction(async t => {
+            await db.sequelize.transaction(async transaction => {
                 const entity = await db[modelName].findOne(
                     { where: { [pkName]: pk } },
-                    { transaction: t }
+                    { transaction }
                 );
 
                 if (entity) {
                     throw new APIActorError(`Entity with ${pkName} ${pk} already exists`, 400);
                 }
 
-                await db[modelName].create(
+                const newEntity = await db[modelName].create(
                     { [pkName]: pk, ...params, ...time }, 
-                    { transaction: t }
+                    { transaction }
                 );
 
+                if (options.beforeTransactions) {
+                    for (const transactionMethod of options.beforeTransactions) {
+                        await transactionMethod(transaction, newEntity, params);
+                    }
+                }
+
+                let snapshot;
                 if (snapshotName && snapshotParams) {
-                    await db[snapshotName].create(
+                    snapshot = await db[snapshotName].create(
                         { [fkName]: pk, ...snapshotParams, ...time }, 
-                        { transaction: t }
+                        { transaction }
                     );
+                }
+
+                if (options.afterTransactions) {
+                    for (const transactionMethod of options.afterTransactions) {
+                        await transactionMethod(transaction, newEntity, snapshot);
+                    }
                 }
             });
         } catch (error) {

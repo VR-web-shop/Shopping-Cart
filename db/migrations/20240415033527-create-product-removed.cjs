@@ -28,11 +28,7 @@ module.exports = {
       },
       product_client_side_uuid: {
         type: Sequelize.STRING,
-        allowNull: false,
-        references: {
-          model: 'Products',
-          key: 'client_side_uuid'
-        }
+        allowNull: false
       },
     });
   },
