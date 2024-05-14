@@ -2,17 +2,29 @@
 Shopping Cart Microservice
 
 ## Install
-1. Install Dependencies
-```
-$ npm install
-```
 
-2. Setup Environment Variables
+1. Setup Environment Variables
 ```
 $ cp .env.example .env
 ```
 
-3. Seed Database
+2. Setup NPM Registry
+Replace `YOUR_PERSONAL_TOKEN` with a classic personal token with `package:read` access.
+```
+$ cp .npmrc.example .npmrc
+```
+
+3. Install Dependencies
+```
+$ npm install
+```
+
+4. Migrate Database
+```
+$ npm run migrate
+```
+
+5. Seed Database
 ```
 $ npm run seed
 ```

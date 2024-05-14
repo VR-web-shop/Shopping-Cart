@@ -1,3 +1,8 @@
+/**
+ * @module jwt/MiddlewareJWT
+ * @description Middleware functions for JSON Web Token
+ * @requires module:jsonwebtoken
+ */
 import Jwt from 'jsonwebtoken';
 
 /**
@@ -10,6 +15,7 @@ import Jwt from 'jsonwebtoken';
  */
 const AuthorizeJWT = function(req, res, next) {
     const header = req.headers['authorization'];
+    
     if (!header) {
         return res.status(401).send({ message: 'Unauthorized' });
     }
@@ -37,7 +43,6 @@ const AuthorizeJWT = function(req, res, next) {
 const AuthorizePermissionJWT = function(permissionName) {
     return (req, res, next) => {
         const user = req.user;
-
         if (!user) {
             return res.status(401).send({ message: 'Unauthorized' });
         }
@@ -46,7 +51,7 @@ const AuthorizePermissionJWT = function(permissionName) {
         let hasPermission = false;
         
         for (const permission of permissions) {
-            if (permission.name === permissionName) {
+            if (permission === permissionName) {
                 hasPermission = true;
                 break;
             }

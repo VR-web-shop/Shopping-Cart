@@ -3,10 +3,6 @@
 echo "🚀 Preparing SDK Deployment 🚀"
 
 echo ""
-echo -e "\e[34mBundle API\e[0m"
-npm run bundle_api
-
-echo ""
 echo -e "\e[34mCommiting any changes made before bumping the version\e[0m"
 git add .
 git commit -m "Prepare deployment"
