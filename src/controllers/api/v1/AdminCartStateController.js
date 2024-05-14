@@ -5,6 +5,8 @@ import CreateCommand from "../../../commands/CartState/CreateCommand.js";
 import ModelCommandService from "../../../services/ModelCommandService.js";
 import ModelQueryService from "../../../services/ModelQueryService.js";
 import Middleware from "../../../jwt/MiddlewareJWT.js";
+import LinkService from "../../../services/LinkService.js";
+import rollbar from "../../../../rollbar.js";
 import express from 'express';
 
 const router = express.Router()
@@ -13,10 +15,10 @@ const queryService = new ModelQueryService()
 
 router.use(Middleware.AuthorizeJWT)
 
-router.route('/api/v1/admin/cart_states/:name')
+router.route('/api/v1/admin/cart_state/:name')
     /**
      * @openapi
-     * '/api/v1/admin/cart_states/{name}':
+     * '/api/v1/admin/cart_state/{name}':
      *  get:
      *     tags:
      *       - Cart State Controller
@@ -39,6 +41,16 @@ router.route('/api/v1/admin/cart_states/:name')
      *             properties:
      *               name:
      *                 type: string
+     *               _links:
+     *                 type: object
+     *                 properties:
+     *                  self:
+     *                   type: object
+     *                   properties:
+     *                    href:
+     *                     type: string
+     *                    method:
+     *                     type: string
      *      400:
      *        description: Bad Request
      *      404:
@@ -52,12 +64,18 @@ router.route('/api/v1/admin/cart_states/:name')
         try {
             const { name } = req.params
             const response = await queryService.invoke(new ReadOneQuery(name))
-            res.send(response)
+            res.send({
+                ...response,
+                ...LinkService.entityLinks(`api/v1/admin/cart_state/${name}`, "GET", [
+                ])
+            })
         } catch (error) {
             if (error instanceof APIActorError) {
+                rollbar.info('APIActorError', { code: error.statusCode, message: error.message })
                 return res.status(error.statusCode).send({ message: error.message })
             }
 
+            rollbar.error(error)
             console.error(error)
             return res.status(500).send({ message: 'Internal Server Error' })
         }
@@ -94,13 +112,39 @@ router.route('/api/v1/admin/cart_states')
     *             properties:
     *              pages:
     *               type: integer
-    *              users:
+    *              count:
+    *               type: integer
+    *              rows:
     *               type: array
     *               items:
     *                type: object
     *                properties:
     *                 name:
     *                  type: string
+    *              _links:
+    *               type: object
+    *               properties:
+    *                self:
+    *                 type: object
+    *                 properties:
+    *                  href:
+    *                   type: string
+    *                  method:
+    *                   type: string
+    *                next:
+    *                 type: object
+    *                 properties:
+    *                  href:
+    *                   type: string
+    *                  method:
+    *                   type: string
+    *                previous:
+    *                 type: object
+    *                 properties:
+    *                  href:
+    *                   type: string
+    *                  method:
+    *                   type: string
     *      400:
     *        description: Bad Request
     *      404:
@@ -114,8 +158,19 @@ router.route('/api/v1/admin/cart_states')
         try {
             const { limit, page } = req.query
             const { rows, count, pages } = await queryService.invoke(new ReadCollectionQuery({limit, page}))
-            res.send({ rows, count, pages })
+            res.send({ 
+                rows, 
+                count, 
+                pages,
+                ...LinkService.paginateLinks(`api/v1/admin/cart_states`, parseInt(page), pages), 
+            })
         } catch (error) {
+            if (error instanceof APIActorError) {
+                rollbar.info('APIActorError', { code: error.statusCode, message: error.message })
+                return res.status(error.statusCode).send({ message: error.message })
+            }
+
+            rollbar.error(error)
             console.error(error)
             return res.status(500).send({ message: 'Internal Server Error' })
         }
@@ -150,6 +205,23 @@ router.route('/api/v1/admin/cart_states')
     *             properties:
     *               name:
     *                type: string
+    *               _links:
+    *                type: object
+    *                properties:
+    *                 self:
+    *                  type: object
+    *                  properties:
+    *                   href:
+    *                    type: string
+    *                   method:
+    *                    type: string
+    *                 get:
+    *                  type: object
+    *                  properties:
+    *                   href:
+    *                    type: string
+    *                   method:
+    *                    type: string
     *      400:
     *        description: Bad Request
     *      404:
@@ -161,15 +233,24 @@ router.route('/api/v1/admin/cart_states')
     */
     .post(Middleware.AuthorizePermissionJWT("cart-states:put"), async (req, res) => {
         try {
+            throw new APIActorError(410, 'Gone')
+
             const { name } = req.body
             await commandService.invoke(new CreateCommand(name))
             const response = await queryService.invoke(new ReadOneQuery(name))
-            res.send(response)
+            res.send({
+                ...response,
+                ...LinkService.entityLinks(`api/v1/admin/cart_states`, "POST", [
+                    { name: 'get', method: 'GET' },
+                ], `api/v1/admin/cart_state/${name}`)
+            })
         } catch (error) {
             if (error instanceof APIActorError) {
+                rollbar.info('APIActorError', { code: error.statusCode, message: error.message })
                 return res.status(error.statusCode).send({ message: error.message })
             }
 
+            rollbar.error(error)
             console.error(error)
             return res.status(500).send({ message: 'Internal Server Error' })
         }

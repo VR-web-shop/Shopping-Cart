@@ -72,7 +72,7 @@ export default class CreateCommand extends ModelCommand {
                 if (entity) {
                     throw new APIActorError(`Entity with ${pkName} ${pk} already exists`, 400);
                 }
-
+                
                 const newEntity = await db[modelName].create(
                     { [pkName]: pk, ...params, ...time }, 
                     { transaction }

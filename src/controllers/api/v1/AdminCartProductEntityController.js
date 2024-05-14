@@ -6,6 +6,8 @@ import DeleteCommand from "../../../commands/CartProductEntity/DeleteCommand.js"
 import ModelCommandService from "../../../services/ModelCommandService.js";
 import ModelQueryService from "../../../services/ModelQueryService.js";
 import Middleware from "../../../jwt/MiddlewareJWT.js";
+import LinkService from "../../../services/LinkService.js";
+import rollbar from "../../../../rollbar.js";
 import express from 'express';
 
 const router = express.Router()
@@ -13,60 +15,6 @@ const commandService = new ModelCommandService()
 const queryService = new ModelQueryService()
 
 router.use(Middleware.AuthorizeJWT)
-
-router.route('/api/v1/admin/cart_product_entities/:client_side_uuid')
-    /**
-     * @openapi
-     * '/api/v1/admin/cart_product_entities/{client_side_uuid}':
-     *  get:
-     *     tags:
-     *       - Cart Product Entity Controller
-     *     summary: Fetch a cart product entity by UUID
-     *     security:
-     *      - bearerAuth: []
-     *     parameters:
-     *      - in: path
-     *        name: client_side_uuid
-     *        required: true
-     *        schema:
-     *         type: string
-     *     responses:
-     *      200:
-     *        description: OK
-     *        content:
-     *         application/json:
-     *           schema:
-     *             type: object
-     *             properties:
-     *               client_side_uuid:
-     *                 type: string
-     *               cart_client_side_uuid:
-     *                 type: string
-     *               product_entity_client_side_uuid:
-     *                 type: string
-     *      400:
-     *        description: Bad Request
-     *      404:
-     *        description: Not Found
-     *      401:
-     *        description: Unauthorized
-     *      500:
-     *        description: Internal Server Error
-     */
-    .get(Middleware.AuthorizePermissionJWT("cart-product-entities:show"), async (req, res) => {
-        try {
-            const { client_side_uuid } = req.params
-            const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
-            res.send(response)
-        } catch (error) {
-            if (error instanceof APIActorError) {
-                return res.status(error.statusCode).send({ message: error.message })
-            }
-
-            console.error(error)
-            return res.status(500).send({ message: 'Internal Server Error' })
-        }
-    })
 
 router.route('/api/v1/admin/cart_product_entities')
     /**
@@ -99,7 +47,9 @@ router.route('/api/v1/admin/cart_product_entities')
     *             properties:
     *              pages:
     *               type: integer
-    *              users:
+    *              count:
+    *               type: integer
+    *              rows:
     *               type: array
     *               items:
     *                type: object
@@ -110,6 +60,30 @@ router.route('/api/v1/admin/cart_product_entities')
     *                  type: string
     *                 product_entity_client_side_uuid:
     *                  type: string
+    *              _links:
+    *               type: object
+    *               properties:
+    *                self:
+    *                 type: object
+    *                 properties:
+    *                  href:
+    *                   type: string
+    *                  method:
+    *                   type: string
+    *                next:
+    *                 type: object
+    *                 properties:
+    *                  href:
+    *                   type: string
+    *                  method:
+    *                   type: string
+    *                previous:
+    *                 type: object
+    *                 properties:
+    *                  href:
+    *                   type: string
+    *                  method:
+    *                   type: string
     *      400:
     *        description: Bad Request
     *      404:
@@ -124,8 +98,19 @@ router.route('/api/v1/admin/cart_product_entities')
             console.log(req.query)
             const { limit, page } = req.query
             const { rows, count, pages } = await queryService.invoke(new ReadCollectionQuery({limit, page}))
-            res.send({ rows, count, pages })
+            res.send({ 
+                rows, 
+                count, 
+                pages,
+                ...LinkService.paginateLinks(`api/v1/admin/cart_product_entities`, parseInt(page), pages), 
+            })
         } catch (error) {
+            if (error instanceof APIActorError) {
+                rollbar.info('APIActorError', { code: error.statusCode, message: error.message })
+                return res.status(error.statusCode).send({ message: error.message })
+            }
+
+            rollbar.error(error)
             console.error(error)
             return res.status(500).send({ message: 'Internal Server Error' })
         }
@@ -173,6 +158,30 @@ router.route('/api/v1/admin/cart_product_entities')
     *                 type: string
     *               product_entity_client_side_uuid:
     *                 type: string
+    *               _links:
+    *                type: object
+    *                properties:
+    *                 self:
+    *                  type: object
+    *                  properties:
+    *                   href:
+    *                    type: string
+    *                   method:
+    *                    type: string
+    *                 get:
+    *                  type: object
+    *                  properties:
+    *                   href:
+    *                    type: string
+    *                   method:
+    *                    type: string
+    *                 delete:
+    *                  type: object
+    *                  properties:
+    *                   href:
+    *                    type: string
+    *                   method:
+    *                    type: string
     *      400:
     *        description: Bad Request
     *      404:
@@ -187,36 +196,116 @@ router.route('/api/v1/admin/cart_product_entities')
             const { client_side_uuid, cart_client_side_uuid, product_entity_client_side_uuid } = req.body
             await commandService.invoke(new CreateCommand(client_side_uuid, { cart_client_side_uuid, product_entity_client_side_uuid }))
             const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
-            res.send(response)
+            res.send({
+                ...response,
+                ...LinkService.entityLinks(`api/v1/admin/cart_product_entities`, "POST", [
+                    { name: 'get', method: 'GET' },
+                    { name: 'delete', method: 'DELETE' },
+                ], `api/v1/admin/cart_product_entity/${client_side_uuid}`)
+            })
         } catch (error) {
             if (error instanceof APIActorError) {
+                rollbar.info('APIActorError', { code: error.statusCode, message: error.message })
                 return res.status(error.statusCode).send({ message: error.message })
             }
 
+            rollbar.error(error)
+            console.error(error)
+            return res.status(500).send({ message: 'Internal Server Error' })
+        }
+    })
+router.route('/api/v1/admin/cart_product_entity/:client_side_uuid')
+    /**
+     * @openapi
+     * '/api/v1/admin/cart_product_entity/{client_side_uuid}':
+     *  get:
+     *     tags:
+     *       - Cart Product Entity Controller
+     *     summary: Fetch a cart product entity by UUID
+     *     security:
+     *      - bearerAuth: []
+     *     parameters:
+     *      - in: path
+     *        name: client_side_uuid
+     *        required: true
+     *        schema:
+     *         type: string
+     *     responses:
+     *      200:
+     *        description: OK
+     *        content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               client_side_uuid:
+     *                 type: string
+     *               cart_client_side_uuid:
+     *                 type: string
+     *               product_entity_client_side_uuid:
+     *                 type: string
+     *               _links:
+     *                 type: object
+     *                 properties:
+     *                  self:
+     *                   type: object
+     *                   properties:
+     *                    href:
+     *                     type: string
+     *                    method:
+     *                     type: string
+     *                  delete:
+     *                   type: object
+     *                   properties:
+     *                    href:
+     *                     type: string
+     *                    method:
+     *                     type: string
+     *      400:
+     *        description: Bad Request
+     *      404:
+     *        description: Not Found
+     *      401:
+     *        description: Unauthorized
+     *      500:
+     *        description: Internal Server Error
+     */
+    .get(Middleware.AuthorizePermissionJWT("cart-product-entities:show"), async (req, res) => {
+        try {
+            const { client_side_uuid } = req.params
+            const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
+            res.send({
+                ...response,
+                ...LinkService.entityLinks(`api/v1/admin/cart_product_entity/${client_side_uuid}`, "GET", [
+                    { name: 'delete', method: 'DELETE' },
+                ])
+            })
+        } catch (error) {
+            if (error instanceof APIActorError) {
+                rollbar.info('APIActorError', { code: error.statusCode, message: error.message })
+                return res.status(error.statusCode).send({ message: error.message })
+            }
+
+            rollbar.error(error)
             console.error(error)
             return res.status(500).send({ message: 'Internal Server Error' })
         }
     })
     /**
     * @openapi
-    * '/api/v1/admin/cart_product_entities':
+    * '/api/v1/admin/cart_product_entity/{client_side_uuid}':
     *  delete:
     *     tags:
     *       - Cart Product Entity Controller
     *     summary: Delete a cart product entity
     *     security:
     *      - bearerAuth: []
-    *     requestBody:
-    *      required: true
-    *      content:
-    *       application/json:
+    *     parameters:
+    *      - in: path
+    *        name: client_side_uuid
+    *        required: true
     *        schema:
-    *         type: object
-    *         required:
-    *          - client_side_uuid
-    *         properties:
-    *          client_side_uuid:
-    *           type: string
+    *         type: string
     *     responses:
     *      204:
     *        description: No Content
@@ -231,14 +320,16 @@ router.route('/api/v1/admin/cart_product_entities')
     */
     .delete(Middleware.AuthorizePermissionJWT("cart-product-entities:delete"), async (req, res) => {
         try {
-            const { client_side_uuid } = req.body
+            const { client_side_uuid } = req.params
             await commandService.invoke(new DeleteCommand(client_side_uuid))
             res.sendStatus(204)
         } catch (error) {
             if (error instanceof APIActorError) {
+                rollbar.info('APIActorError', { code: error.statusCode, message: error.message })
                 return res.status(error.statusCode).send({ message: error.message })
             }
 
+            rollbar.error(error)
             console.error(error)
             return res.status(500).send({ message: 'Internal Server Error' })
         }

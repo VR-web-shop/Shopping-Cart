@@ -20,7 +20,8 @@ export default class PutCommand extends _PutCommand {
                 "postal_code",
                 "product_order_state_name",
                 "deliver_option_client_side_uuid",
-                "payment_option_client_side_uuid"
+                "payment_option_client_side_uuid",
+                "distributed_transaction_transaction_uuid"
             ],
             "ProductOrder",
             "ProductOrderDescription",
@@ -49,7 +50,7 @@ export default class PutCommand extends _PutCommand {
                             where: { cart_client_side_uuid: cartDescription.cart_client_side_uuid },
                             include: [{ model: db.ProductEntityDescription }]
                         }).execute(db, { transaction: t });
-                        console.log('cartProductEntities', cartProductEntities);
+                        
                         if (count > 0) {
                             for (const cartProductEntity of cartProductEntities) {
 
@@ -71,9 +72,10 @@ export default class PutCommand extends _PutCommand {
                         /**
                          * Remove all product entities from the cart because
                          * they are now reserved by the order.
-                         */
-                        await new DeleteCartEntityCommand(cartDescription.cart_client_side_uuid)
+                         * await new DeleteCartEntityCommand(cartDescription.cart_client_side_uuid)
                             .execute(db, { transaction: t });
+                         */
+                        
                     }
                 }
             ]

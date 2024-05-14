@@ -11,7 +11,8 @@ export default class ReadOneQuery extends _ReadOneQuery {
             "PaymentOptionDescription", 
             "PaymentOptionRemoved",
             "payment_option_client_side_uuid",
-            additionalParams
+            additionalParams,
+            true
         );
     }
 }

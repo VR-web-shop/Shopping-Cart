@@ -11,7 +11,8 @@ export default class ReadOneQuery extends _ReadOneQuery {
             "DeliverOptionDescription", 
             "DeliverOptionRemoved",
             "deliver_option_client_side_uuid",
-            additionalParams
+            additionalParams,
+            true
         );
     }
 }

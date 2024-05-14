@@ -11,7 +11,8 @@ export default class ReadCollectionQuery extends _ReadCollectionQuery {
             "PaymentOptionRemoved",
             snapshotOptions,
             "payment_option_client_side_uuid",
-            "client_side_uuid"
+            "client_side_uuid",
+            true
         );
     }
 }

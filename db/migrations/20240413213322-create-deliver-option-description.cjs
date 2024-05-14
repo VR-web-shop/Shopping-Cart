@@ -37,6 +37,14 @@ module.exports = {
           key: 'client_side_uuid'
         }
       },
+      distributed_transaction_transaction_uuid: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        references: {
+          model: 'DistributedTransactions',
+          key: 'transaction_uuid'
+        }
+      },
     });
   },
   async down(queryInterface, Sequelize) {

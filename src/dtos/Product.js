@@ -10,6 +10,8 @@ export default function ProductDTO(entity) {
         description: entity.description,
         thumbnail_source: entity.thumbnail_source,
         price: entity.price,
+        transaction_state_name: entity.distributed_transaction_state_name,
+        transaction_message: entity.transaction_message,
         created_at: entity.created_at,
         updated_at: entity.updated_at,
     }

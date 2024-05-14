@@ -25,24 +25,48 @@ const NewCartAuthentication = function (uuid) {
 
 
 const AuthorizeJWTCart = function(req, res, next) {
-    // Is the body in the url?
-    let { uuid } = req.params;
-    let { access_token: token } = req.query;
-    // or is it in the body?
-    if (!uuid) uuid = req.query.cart_uuid;
-    if (!uuid) uuid = req.body.cart_uuid || req.body.uuid;
-    if (!token) token = req.body.access_token;
-
-    if (!uuid || !token) {
+   
+    const header = req.headers['authorization'];
+    if (!header) {
         return res.status(401).send({ message: 'Unauthorized' });
+    }
+
+    const lookUpUUIDs = [];
+    if (req.body.client_side_uuid) {
+        lookUpUUIDs.push(req.body.client_side_uuid);
+    }
+
+    if (req.body.cart_client_side_uuid) {
+        lookUpUUIDs.push(req.body.cart_client_side_uuid);
+    }
+
+    if (req.params.client_side_uuid) {
+        lookUpUUIDs.push(req.params.client_side_uuid);
+    }
+
+    if (req.query.client_side_uuid) {
+        lookUpUUIDs.push(req.query.client_side_uuid);
+    }
+
+    if (req.query.cart_client_side_uuid) {
+        lookUpUUIDs.push(req.query.cart_client_side_uuid);
+    }
+
+    const token = header && header.split(' ')[1];
+    if (!token) {
+        return res.status(401).send({ message: 'No token provided' });
     }
     
     try {
         const decoded = Jwt.verify(token, process.env.JWT_CART_ACCESS_SECRET);
         req.cart = decoded;
-        const { sub } = decoded;
-        if (sub !== uuid) {
-            return res.status(401).send({ message: 'Unauthorized' });
+
+        if (lookUpUUIDs.length > 0) {
+            const hasUUID = lookUpUUIDs.includes(decoded.sub);
+            
+            if (!hasUUID) {
+                return res.status(401).send({ message: 'Unauthorized' });
+            }
         }
 
         next();

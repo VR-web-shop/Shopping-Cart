@@ -11,7 +11,8 @@ export default class ReadCollectionQuery extends ModelQuery {
         tombstoneName = null,
         snapshotOptions = {},
         fkName = null,
-        pkName = null
+        pkName = null,
+        useDTable = false
     ) {
         super();
         
@@ -43,6 +44,7 @@ export default class ReadCollectionQuery extends ModelQuery {
         this.snapshotOptions = snapshotOptions;
         this.fkName = fkName;
         this.pkName = pkName;
+        this.useDTable = useDTable;
     }
 
     async execute(db) {
@@ -82,6 +84,7 @@ export default class ReadCollectionQuery extends ModelQuery {
         const fkName = this.fkName;
         const pkName = this.pkName;
         const where = options.where;
+        const useDTable = this.useDTable;
 
         const queryOptions = {
             limit, 
@@ -92,6 +95,7 @@ export default class ReadCollectionQuery extends ModelQuery {
             where, 
             fkName, 
             pkName, 
+            useDTable,
         }
 
         const countOptions = {
@@ -113,6 +117,7 @@ export default class ReadCollectionQuery extends ModelQuery {
                 replacements[w.table] = w.table;
                 replacements[w.column] = w.column;
                 replacements[w.key] = w.value;
+                replacements[w.operator] = w.operator;
             });
         }
 

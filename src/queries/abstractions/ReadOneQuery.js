@@ -11,7 +11,8 @@ export default class ReadOneQuery extends ModelQuery {
         snapshotName = null, 
         tombstoneName = null,
         fkName = null,
-        additionalParams = {}
+        additionalParams = {},
+        useDTable = false
     ) {
         super();
 
@@ -55,6 +56,7 @@ export default class ReadOneQuery extends ModelQuery {
         this.tombstoneName = tombstoneName;
         this.fkName = fkName;
         this.additionalParams = additionalParams;
+        this.useDTable = useDTable;
     }
 
     async execute(db) {
@@ -67,6 +69,7 @@ export default class ReadOneQuery extends ModelQuery {
         const tTable = this.tombstoneName ? `${this.tombstoneName}s` : null;
         const fkName = this.fkName;
         const pkName = this.pkName;
+        const useDTable = this.useDTable;
         const limit = 1;
         const where = [{ 
             table: mTable, 
@@ -82,6 +85,7 @@ export default class ReadOneQuery extends ModelQuery {
             fkName, 
             pkName, 
             limit,
+            useDTable,
             where
         }
 
@@ -94,12 +98,16 @@ export default class ReadOneQuery extends ModelQuery {
             });
         }
 
+        if (this.additionalParams.include) {
+            queryOptions.include = this.additionalParams.include;
+        }
+
         const replacements = { pk: this.pk, limit: 1 };
         const selectSQL = ModelQuery.getSql({ prefix: "SELECT *", ...queryOptions });
         const selectOpt = { type: QueryTypes.SELECT, replacements }
 
         const entity = await db.sequelize.query(selectSQL, selectOpt);
-
+        
         if (entity.length === 0) {
             throw new APIActorError("No Entity found", 404);
         }

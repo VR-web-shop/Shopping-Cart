@@ -11,7 +11,8 @@ export default class ReadCollectionQuery extends _ReadCollectionQuery {
             "ProductOrderRemoved",
             snapshotOptions,
             "product_order_client_side_uuid",
-            "client_side_uuid"
+            "client_side_uuid",
+            true
         );
     }
 }

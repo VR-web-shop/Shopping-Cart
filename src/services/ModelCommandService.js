@@ -6,12 +6,12 @@ export default function ModelCommandService(db=_db) {
     if (typeof db !== 'object') 
         throw new Error('db must be an object');
     
-    const invoke = async (command) => {
+    const invoke = async (command, options={}) => {
         if (!command) throw new Error('Command is required');
         if (!(command instanceof ModelCommand))
             throw new Error('Command must be an instance of ModelCommand');
         
-        await command.execute(db);
+        await command.execute(db, options);
     }
 
     return {

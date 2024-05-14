@@ -11,7 +11,8 @@ export default class ReadOneQuery extends _ReadOneQuery {
             "ProductOrderEntityDescription", 
             "ProductOrderEntityRemoved",
             "product_order_entity_client_side_uuid",
-            additionalParams
+            additionalParams,
+            true
         );
     }
 }

@@ -21,6 +21,12 @@ module.exports = {
       },
       {
         name: 'RETURNED_BY_CUSTOMER',
+      },
+      {
+        name: 'DISCARDED_BY_EMPLOYEE',
+      },
+      {
+        name: 'SYSTEM_FAILURE',
       }
     ]);
   },
