@@ -1,6 +1,6 @@
 import _PutCommand from "../abstractions/PutCommand.js";
 import PutProductEntityCommand from "../ProductEntity/PutCommand.js";
-import PutCartCommand from "../cart/PutCommand.js";
+import PutCartCommand from "../Cart/PutCommand.js";
 import DeleteCartEntityCommand from "../CartProductEntity/DeleteCommand.js";
 import ReadCollectionCartEntitiesQuery from "../../queries/Cart/ReadCollectionQuery.js";
 
