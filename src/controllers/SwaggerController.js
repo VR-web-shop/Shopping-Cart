@@ -5,7 +5,10 @@ import express from 'express';
 
 const __dirname = dir.resolve();
 const router = express.Router()
-const port = process.env.SERVER_PORT
+let url = process.env.DEV_SERVER_URL
+if (process.env.NODE_ENV === 'production') {
+    url = process.env.PROD_SERVER_URL
+}
 const options = {
     definition: {
         openapi: '3.0.0',
@@ -20,8 +23,8 @@ const options = {
         },
         servers: [
             {
-                url: `http://localhost:${port}/`,
-                description: "Local server"
+                url,
+                description: "Server"
             },
         ],
         components: {
