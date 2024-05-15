@@ -39,7 +39,7 @@ npm start
 2. Visit [localhost:3000/api/v1/documentation](http://localhost:3000/api/v1/documentation) for Swagger UI
 
 ## Deploy
-
+[![VM Publish Production](https://github.com/VR-web-shop/Shopping-Cart/actions/workflows/vm-publish-production.yml/badge.svg)](https://github.com/VR-web-shop/Shopping-Cart/actions/workflows/vm-publish-production.yml)
 
 The GitHub Workflow: [vm-publish-production.yml](/.github/workflows/vm-publish-production.yml); execute a CI/CD flow on push to main.
 

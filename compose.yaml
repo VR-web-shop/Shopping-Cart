@@ -5,13 +5,3 @@ services:
       - NODE_ENV=production
     ports:
       - "3004:3004"
-  shoppingcartmysql:
-    image: mysql
-    env_file:
-      - ".env"
-    ports:
-      - "3310:3306"
-    volumes:
-      - shopping-cart-mysql-volume:/var/lib/mysql
-volumes:
-  shopping-cart-mysql-volume:
