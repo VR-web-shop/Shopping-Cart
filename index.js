@@ -15,12 +15,18 @@ import PaymentOptionController from './src/controllers/api/v1/PaymentOptionContr
 import ProductOrderController from './src/controllers/api/v1/ProductOrderController.js';
 import rollbar from "./rollbar.js";
 
+const port = process.env.SERVER_PORT;
+const origin = process.env.CORS_ORIGINS.split(',');
+
 (async () => {
     await Sagas.BrokerService.connect()
 
     const app = express();
 
-    app.use(cors({origin: '*'}))
+    app.use(cors({
+        origin: '*'
+    }));
+
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(rollbar.errorHandler());
@@ -36,8 +42,8 @@ import rollbar from "./rollbar.js";
     app.use(AdminCartProductEntityController);
     app.use(AdminCartStateController);
     
-    app.listen(process.env.SERVER_PORT, () => {
-        console.log(`Server is running on port ${process.env.SERVER_PORT}`);
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
     });
 })();
 
