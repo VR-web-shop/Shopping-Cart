@@ -116,12 +116,12 @@ handler.onReduceEvent(async (
     );
 });
 
-export default (operation, params) => {
+export default async (operation, params) => {
     if (operation !== "create" && operation !== "delete") {
         throw new Error("Invalid operation: " + operation);
     }
 
     params.operation = operation;
 
-    return handler.start(params);
+    return await handler.start(params);
 }
