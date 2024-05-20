@@ -3,6 +3,7 @@ import ReadOneQuery from "../../../queries/Cart/ReadOneQuery.js";
 import ReadOneQueryProductOrder from "../../../queries/ProductOrder/ReadOneQuery.js";
 import ReadCollectionQueryCartProductEntity from "../../../queries/CartProductEntity/ReadCollectionQuery.js";
 import PutCommand from "../../../commands/Cart/PutCommand.js";
+import PutProductOrderSagaOut from "../../../sagas/ProductOrder/PutProductOrderSagaOut.js";
 import ModelCommandService from "../../../services/ModelCommandService.js";
 import ModelQueryService from "../../../services/ModelQueryService.js";
 import CartJWT from "../../../jwt/CartJWT.js";
@@ -406,8 +407,57 @@ router.route('/api/v1/cart')
     .patch(CartJWT.AuthorizeJWTCart, async (req, res) => {
         try {
             const { sub: client_side_uuid } = req.cart
-            const { cart_state_name, product_order } = req.body
-            await commandService.invoke(new PutCommand(client_side_uuid, { cart_state_name }, product_order))
+            const { cart_state_name } = req.body
+            await commandService.invoke(new PutCommand(client_side_uuid, { cart_state_name }), {
+                afterTransactions: [
+                    async (t, entity, snapshot, db) => {
+                        
+                        const newSnapshot = snapshot;
+                        const oldSnapshot = entity.CartDescriptions && entity.CartDescriptions.length > 0
+                            ? entity.CartDescriptions[0]
+                            : null;
+    
+                        // If the customer has any open orders and they cancel the checkout,
+                        // we should cancel the orders as well.
+                        const oldProductOrderUUID = oldSnapshot && oldSnapshot.product_order_client_side_uuid;
+                        const isOpenForProductEntities = oldSnapshot && newSnapshot.cart_state_name === 'OPEN_FOR_PRODUCT_ENTITIES';
+                        const shouldRemoveProductOrder = oldProductOrderUUID && isOpenForProductEntities;
+                        if (!shouldRemoveProductOrder) {                            
+                            return;
+                        }
+
+                        const uuid = oldSnapshot.product_order_client_side_uuid;
+                        const productOrder = await db.ProductOrderDescription.findOne(
+                            {
+                                where: { product_order_client_side_uuid: uuid },
+                                order: [['id', 'DESC']],
+                            },
+                            { transaction: t }
+                        );
+                        await PutProductOrderSagaOut({
+                            product_order: {
+                                client_side_uuid: uuid,
+                                product_order_state_name: 'CANCELLED_BY_CUSTOMER',
+                                name: productOrder.name,
+                                email: productOrder.email,
+                                address: productOrder.address,
+                                city: productOrder.city,
+                                country: productOrder.country,
+                                postal_code: productOrder.postal_code,
+                                deliver_option_client_side_uuid: productOrder.deliver_option_client_side_uuid,
+                                payment_option_client_side_uuid: productOrder.payment_option_client_side_uuid,
+                            },
+                            transaction: t
+                        });
+
+                        await db.CartDescription.create({
+                            cart_client_side_uuid: newSnapshot.cart_client_side_uuid,
+                            cart_state_name: newSnapshot.cart_state_name,
+                            product_order_client_side_uuid: null,
+                        }, { transaction: t });
+                    }
+                ]
+            })
             const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
             res.send({
                 ...response,

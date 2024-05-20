@@ -1,15 +1,21 @@
 import APIActorError from "../errors/APIActorError.js";
+import CartReadOneQuery from "../../../queries/Cart/ReadOneQuery.js";
 import ReadOneQuery from "../../../queries/ProductOrder/ReadOneQuery.js";
 import ReadCollectionQuery from "../../../queries/ProductOrder/ReadCollectionQuery.js";
 import PutCommand from "../../../commands/ProductOrder/PutCommand.js";
+import CartPutCommand from "../../../commands/Cart/PutCommand.js";
 import DeleteCommand from "../../../commands/ProductOrder/DeleteCommand.js";
 import ModelCommandService from "../../../services/ModelCommandService.js";
 import ModelQueryService from "../../../services/ModelQueryService.js";
+import PutProductOrderSagaOut from "../../../sagas/ProductOrder/PutProductOrderSagaOut.js";
+import PDreadCollectionQuery from "../../../queries/CartProductEntity/ReadCollectionQuery.js";
+import PDDeleteCommand from "../../../commands/CartProductEntity/DeleteCommand.js";
 import CartJWT from "../../../jwt/CartJWT.js";
 import LinkService from "../../../services/LinkService.js";
 import rollbar from "../../../../rollbar.js";
 import express from 'express';
 import { Op } from "sequelize";
+import { v4 } from 'uuid';
 
 const router = express.Router()
 const commandService = new ModelCommandService()
@@ -229,8 +235,42 @@ router.route('/api/v1/product_orders')
     .post(CartJWT.AuthorizeJWTCart, async (req, res) => {
         try {
             const product_order_state_name = 'WAITING_FOR_PAYMENT'
-            const { client_side_uuid, name, email, address, city, country, postal_code, deliver_option_client_side_uuid, payment_option_client_side_uuid } = req.body
-            await commandService.invoke(new CreateCommand(client_side_uuid, { name, email, address, city, country, postal_code, product_order_state_name, deliver_option_client_side_uuid, payment_option_client_side_uuid }))
+            const { client_side_uuid, name, email, address, city, country, postal_code, deliver_option_client_side_uuid, payment_option_client_side_uuid, cart_client_side_uuid } = req.body
+            const { rows: productEntitiesRaw } = await queryService.invoke(new PDreadCollectionQuery({
+                where: [{ 
+                    table: 'CartProductEntities',
+                    column: 'cart_client_side_uuid',
+                    key: 'cart_client_side_uuid',
+                    operator: Op.eq,
+                    value: cart_client_side_uuid,
+                 }],
+            }));
+            const product_order_entities = productEntitiesRaw.map(row => ({
+                client_side_uuid: v4(),
+                product_order_client_side_uuid: client_side_uuid,
+                product_entity_client_side_uuid: row.product_entity_client_side_uuid,
+            }));
+            
+            await PutProductOrderSagaOut({
+                product_order: {
+                    client_side_uuid,
+                    product_order_state_name,
+                    name,
+                    email,
+                    address,
+                    city,
+                    country,
+                    postal_code,
+                    deliver_option_client_side_uuid,
+                    payment_option_client_side_uuid,
+                },
+                product_order_entities
+            })
+            await commandService.invoke(new CartPutCommand(cart_client_side_uuid, { 
+                cart_state_name: 'WAITING_FOR_CHECKOUT', 
+                product_order_client_side_uuid: client_side_uuid 
+            }))
+
             const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
             res.send({
                 ...response,
@@ -241,6 +281,7 @@ router.route('/api/v1/product_orders')
                 ], `api/v1/product_order`)
             })
         } catch (error) {
+            console.log(error)
             if (error instanceof APIActorError) {
                 rollbar.info('APIActorError', { code: error.statusCode, message: error.message })
                 return res.status(error.statusCode).send({ message: error.message })
@@ -456,18 +497,57 @@ router.route('/api/v1/product_order')
     */
     .patch(CartJWT.AuthorizeJWTCart, async (req, res) => {
         try {
-            const { sub } = req.cart
-            const cart = await queryService.invoke(new ReadOneQuery(sub))
+            console.log(req.body)
+            const { sub: cart_client_side_uuid } = req.cart
+
+            const cart = await queryService.invoke(new CartReadOneQuery(cart_client_side_uuid))
             if (!cart.product_order_client_side_uuid) {
                 res.send({ msg: 'The cart has not product order yet!' })
                 return
             }
             const client_side_uuid = cart.product_order_client_side_uuid
-            const entity = await queryService.invoke(new ReadOneQuery(client_side_uuid))
-            const product_order_state_name = entity.product_order_state_name
-            const { name, email, address, city, country, postal_code, deliver_option_client_side_uuid, payment_option_client_side_uuid } = req.body
-            await commandService.invoke(new PutCommand(client_side_uuid, { name, email, address, city, country, postal_code, deliver_option_client_side_uuid, payment_option_client_side_uuid, product_order_state_name }))
+            const { rows: productEntitiesRaw } = await queryService.invoke(new PDreadCollectionQuery({
+                where: [{ 
+                    table: 'CartProductEntities',
+                    column: 'cart_client_side_uuid',
+                    key: 'cart_client_side_uuid',
+                    operator: Op.eq,
+                    value: cart_client_side_uuid,
+                 }],
+            }));
+            const product_order_entities = productEntitiesRaw.map(row => ({
+                client_side_uuid: v4(),
+                product_order_client_side_uuid: client_side_uuid,
+                product_entity_client_side_uuid: row.product_entity_client_side_uuid,
+            }));
+
+            
+            const { name, email, address, city, country, postal_code, product_order_state_name, deliver_option_client_side_uuid, payment_option_client_side_uuid } = req.body
+            await PutProductOrderSagaOut({
+                product_order: {
+                    client_side_uuid,
+                    product_order_state_name,
+                    name,
+                    email,
+                    address,
+                    city,
+                    country,
+                    postal_code,
+                    deliver_option_client_side_uuid,
+                    payment_option_client_side_uuid,
+                },
+                product_order_entities
+            })
             const response = await queryService.invoke(new ReadOneQuery(client_side_uuid))
+            if (response.product_order_state_name === 'WAITING_FOR_SHIPMENT') {
+                await commandService.invoke(new CartPutCommand(cart_client_side_uuid, { 
+                    cart_state_name: 'OPEN_FOR_PRODUCT_ENTITIES', 
+                    product_order_client_side_uuid: null 
+                }))
+                productEntitiesRaw.forEach(async row => {
+                    await commandService.invoke(new PDDeleteCommand(row.client_side_uuid))
+                })
+            }
             res.send({
                 ...response,
                 ...LinkService.entityLinks(`api/v1/product_order`, "GET", [
@@ -476,6 +556,7 @@ router.route('/api/v1/product_order')
                 ])
             })
         } catch (error) {
+            console.log(error)
             if (error instanceof APIActorError) {
                 rollbar.info('APIActorError', { code: error.statusCode, message: error.message })
                 return res.status(error.statusCode).send({ message: error.message })

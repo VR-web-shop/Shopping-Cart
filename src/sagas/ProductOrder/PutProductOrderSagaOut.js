@@ -1,6 +1,7 @@
 import Sagas from "@vr-web-shop/sagas";
 import ModelCommandService from "../../services/ModelCommandService.js";
 import ProductOrderPutCommand from "../../commands/ProductOrder/PutCommand.js";
+import ProductOrderEntityPutCommand from "../../commands/ProductOrderEntity/PutCommand.js";
 import DistributedTransactionCreateCommand from "../../commands/DistributedTransaction/CreateCommand.js";
 import db from "../../../db/models/index.cjs";
 
@@ -75,9 +76,18 @@ handler.initiateEvent(async (
         distributed_transaction_transaction_uuid
     }), { transaction });
 
+    const product_order_entities = params.product_order_entities || [];
+    for (const product_order_entity of product_order_entities) {
+        await cmdService.invoke(new ProductOrderEntityPutCommand(product_order_entity.client_side_uuid, {
+            product_order_client_side_uuid: product_order_entity.product_order_client_side_uuid,
+            product_entity_client_side_uuid: product_order_entity.product_entity_client_side_uuid,
+            distributed_transaction_transaction_uuid
+        }), { transaction });
+    }
+
     return {
         product_order, 
-        product_order_entities: params.product_order_entities
+        product_order_entities
     };
 });
 
