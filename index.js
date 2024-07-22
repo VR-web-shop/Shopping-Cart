@@ -20,14 +20,13 @@ import ProductController from './src/controllers/api/v1/ProductController.js';
 import rollbar from "./rollbar.js";
 
 const port = process.env.SERVER_PORT;
-const origin = process.env.CORS_ORIGINS.split(',');
 
 (async () => {
     await Sagas.BrokerService.connect()
 
     const app = express();
 
-    app.use(cors({ origin }));
+    app.use(cors({ origin: '*' }));
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(rollbar.errorHandler());
@@ -55,9 +54,6 @@ const origin = process.env.CORS_ORIGINS.split(',');
             
             === Swagger Docs ===
             URL: http://localhost:${port}/api/v1/documentation
-
-            === CORS ===
-            Origins: ${origin}
 
             === Message Broker ===
             URL: ${process.env.MESSAGE_BROKER_URL}
