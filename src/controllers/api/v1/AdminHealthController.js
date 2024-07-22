@@ -53,6 +53,7 @@ router.route('/api/v1/admin/health')
                 }))
                 mysql_connected = true;
             } catch (error) {
+                console.log(error)
                 mysql_connected = false;
             }
 
@@ -60,6 +61,7 @@ router.route('/api/v1/admin/health')
             try {
                 broker_connected = Sagas.BrokerService.isConnected();
             } catch (error) {
+                console.log(error)
                 broker_connected = false;
             }
 
