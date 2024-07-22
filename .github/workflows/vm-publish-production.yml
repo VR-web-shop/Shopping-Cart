@@ -49,6 +49,4 @@ jobs:
           cd ${{ secrets.SERVER_LOCATION }}/github/workspace
           docker build -t ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }} .
           k3d image import ${{ secrets.IMAGE_NAME }}:${{ secrets.IMAGE_TAG }}
-          kompose convert -o ./kubernetes/
-          kubectl apply -f kubernetes/
           kubectl get pods | grep ${{ secrets.IMAGE_NAME }} | awk '{print $1}' | xargs -I {} kubectl delete pod {} &
