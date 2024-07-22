@@ -31,7 +31,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@vr-web-shop/sagas": "1.0.9",
+    "@vr-web-shop/sagas": "1.0.12",
     "@vr-web-shop/meteor": "1.0.79",
     "nodemon": "^3.1.0",
     "rollup": "^4.13.0",
