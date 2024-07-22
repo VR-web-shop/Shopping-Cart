@@ -6,7 +6,7 @@ export default class ReadCollectionQuery extends _ReadCollectionQuery {
         super(
             options, 
             ProductDTO, 
-            "products", 
+            "Products", 
             "ProductDescription", 
             "ProductRemoved",
             snapshotOptions,
