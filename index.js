@@ -9,6 +9,9 @@ import AdminCartProductEntityController from './src/controllers/api/v1/AdminCart
 import AdminCartStateController from './src/controllers/api/v1/AdminCartStateController.js';
 import AdminHealthController from './src/controllers/api/v1/AdminHealthController.js';
 import AdminProductOrderController from './src/controllers/api/v1/AdminProductOrderController.js';
+import AdminProductEntityStateController from './src/controllers/api/v1/AdminProductEntityStateController.js';
+import AdminProductOrderStateController from './src/controllers/api/v1/AdminProductOrderStateController.js';
+import AdminProductOrderEntityController from './src/controllers/api/v1/AdminProductOrderEntityController.js';
 import CartController from './src/controllers/api/v1/CartController.js';
 import CartProductEntityController from './src/controllers/api/v1/CartProductEntityController.js';
 import CartStateController from './src/controllers/api/v1/CartStateController.js';
@@ -45,6 +48,9 @@ const port = process.env.SERVER_PORT;
     app.use(AdminCartStateController);
     app.use(AdminHealthController);
     app.use(AdminProductOrderController);
+    app.use(AdminProductEntityStateController);
+    app.use(AdminProductOrderStateController);
+    app.use(AdminProductOrderEntityController);
     
     app.listen(port, () => {
         console.log(`
