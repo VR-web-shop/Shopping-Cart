@@ -55,13 +55,13 @@ export default class ModelQuery {
             ${
                 // Left join the latest distributed transaction by snapshot
                 useDTable && sTable 
-                ? ` LEFT JOIN distributedtransactions AS dt ON dt . transaction_uuid = ${sTable} . distributed_transaction_transaction_uuid`
+                ? ` LEFT JOIN DistributedTransactions AS dt ON dt . transaction_uuid = ${sTable} . distributed_transaction_transaction_uuid`
                 : ""
             }
             ${
                 // Left join the latest distributed transaction by entity
                 useDTable && !sTable 
-                ? ` LEFT JOIN distributedtransactions AS dt ON dt . transaction_uuid = ${mTable} . distributed_transaction_transaction_uuid`
+                ? ` LEFT JOIN DistributedTransactions AS dt ON dt . transaction_uuid = ${mTable} . distributed_transaction_transaction_uuid`
                 : ""
             }
             ${
